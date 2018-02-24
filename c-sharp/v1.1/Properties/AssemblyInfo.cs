@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HuguesJohnson")]
 [assembly: AssemblyProduct("narpas-win")]
-[assembly: AssemblyCopyright("Copyright © 2011-2012 Hugues Johnson")]
+[assembly: AssemblyCopyright("Copyright © 2010-2018 Hugues Johnson")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

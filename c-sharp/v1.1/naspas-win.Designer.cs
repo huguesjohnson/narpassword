@@ -280,7 +280,7 @@
             this.labelGpl.Name = "labelGpl";
             this.labelGpl.Size = new System.Drawing.Size(168, 13);
             this.labelGpl.TabIndex = 26;
-            this.labelGpl.Text = "See gpl.htm for license information";
+            this.labelGpl.Text = "MIT License";
             // 
             // comboBoxPasswordName
             // 

@@ -314,7 +314,7 @@
             this.label1.Name="label1";
             this.label1.Size=new System.Drawing.Size(168,13);
             this.label1.TabIndex=15;
-            this.label1.Text="See gpl.htm for license information";
+            this.label1.Text="MIT License";
             // 
             // MainForm
             // 
