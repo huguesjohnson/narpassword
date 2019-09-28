@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="narpas/build/source/buildConfig/debug"/>
+	<classpathentry kind="src" path="narpas/build/source/buildConfig/release"/>
+	<classpathentry kind="src" path="narpas/build/source/r/debug"/>
+	<classpathentry kind="src" path="narpas/build/source/r/release"/>
+	<classpathentry kind="src" path="narpas/src/main/java"/>
+	<classpathentry kind="lib" path="gradle/wrapper/gradle-wrapper.jar"/>
+	<classpathentry kind="lib" path="narpas/libs/android-support-v4.jar"/>
+	<classpathentry kind="output" path="narpas/build/classes/debug"/>
+</classpath>

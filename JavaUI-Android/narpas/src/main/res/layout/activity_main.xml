@@ -1,0 +1,117 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                tools:context=".MainActivity">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_passphrase"
+            android:id="@+id/textViewPassphrase"
+            android:layout_alignBaseline="@+id/editTextPassphrase"
+            android:layout_alignParentLeft="true"/>
+
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:ems="10"
+            android:id="@+id/editTextPassphrase"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignLeft="@+id/editTextPasswordname"/>
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_passwordname"
+            android:id="@+id/textViewPasswordname"
+            android:layout_alignBaseline="@+id/editTextPasswordname"/>
+
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:ems="10"
+            android:id="@+id/editTextPasswordname"
+            android:layout_below="@+id/editTextPassphrase"
+            android:layout_alignParentRight="true"
+            android:layout_toRightOf="@+id/textViewPasswordname"/>
+
+    <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_uselcase"
+            android:id="@+id/checkBoxUselcase"
+            android:layout_below="@+id/editTextPasswordname"
+            android:checked="true"/>
+
+    <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_useucase"
+            android:id="@+id/checkBoxUseucase"
+            android:layout_below="@+id/checkBoxUselcase"
+            android:layout_alignLeft="@+id/checkBoxUselcase"
+            android:checked="true"/>
+
+    <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_usenumbers"
+            android:id="@+id/checkBoxUsenumbers"
+            android:layout_below="@+id/checkBoxUseucase"
+            android:layout_alignLeft="@+id/checkBoxUseucase"
+            android:checked="true"/>
+
+    <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_usespecialcharacters"
+            android:id="@+id/checkBoxUsespecialcharacters"
+            android:layout_below="@+id/checkBoxUsenumbers"
+            android:layout_alignLeft="@+id/checkBoxUsenumbers"
+            android:checked="true"/>
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_passwordlength"
+            android:id="@+id/textViewPasswordlength"
+            android:layout_below="@+id/checkBoxUsespecialcharacters"
+            android:layout_alignLeft="@+id/textViewPasswordname"/>
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/textViewPasswordlengthValue"
+            android:layout_below="@+id/checkBoxUsespecialcharacters"
+            android:layout_toRightOf="@+id/textViewPasswordlength"/>
+
+    <SeekBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/seekBarPasswordlength"
+            android:max="15"
+            android:indeterminate="false"
+            android:progress="3"
+            android:layout_below="@+id/checkBoxUsespecialcharacters"
+            android:layout_alignLeft="@+id/checkBoxUsespecialcharacters"
+            android:layout_marginTop="21dp"
+            android:layout_alignRight="@+id/editTextPasswordname"/>
+
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/caption_copy"
+            android:id="@+id/buttonCopy"
+            android:layout_below="@+id/seekBarPasswordlength"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"/>
+
+</RelativeLayout>

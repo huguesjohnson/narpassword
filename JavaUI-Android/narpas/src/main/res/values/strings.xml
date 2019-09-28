@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name" >NARPassword
+    </string>
+    <string name="action_settings" >Settings
+    </string>
+    <string name="caption_passphrase" >Pass Phrase:
+    </string>
+    <string name="caption_passwordname" >Password Name:
+    </string>
+    <string name="caption_password" >Password:
+    </string>
+    <string name="caption_uselcase" >Use lower case characters
+    </string>
+    <string name="caption_useucase" >Use upper case characters
+    </string>
+    <string name="caption_usenumbers" >Use numbers
+    </string>
+    <string name="caption_usespecialcharacters" >Use special characters
+    </string>
+    <string name="caption_passwordlength" >Password length:
+    </string>
+    <string name="caption_copy" >Copy password to clipboard
+    </string>
+
+</resources>
