@@ -26,7 +26,6 @@ package com.huguesjohnson.narpassword.javafx;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,6 +37,8 @@ import com.huguesjohnson.narpas.Narpas;
 import com.huguesjohnson.narpas.PasswordSetting;
 import com.huguesjohnson.narpas.StringEncryptDecrypt;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -45,6 +46,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -67,9 +69,11 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class NARPasswordJavaFX extends Application{
 	private Stage primaryStage;
@@ -82,6 +86,13 @@ public class NARPasswordJavaFX extends Application{
     private CheckBox checkUpperCase;
     private CheckBox checkNumbers;
     private CheckBox checkSpecialCharacters;
+    private CheckBox checkClearClipboard;
+    private TextField fieldClearClipboardSeconds;
+    private long lastClipboardClear=0;
+    private CheckBox checkClearPassPhrase;
+    private TextField fieldClearPassPhraseSeconds;
+    private long lastPassPhraseClear=0;
+    private boolean passwordInClipboard=false;
     private Slider sliderPasswordLength;
     private ListView<PasswordSetting> passwordList;
     private Button openButton;
@@ -90,6 +101,9 @@ public class NARPasswordJavaFX extends Application{
     private Button listRemoveButton;
     private int lastSelectionIndex;
     private boolean isRemoving=false;
+    private Insets hboxInsets=new Insets(8,4,0,4);
+    private Insets checkboxInsets=new Insets(4,4,0,4);
+    private Pos hboxPos=Pos.CENTER_LEFT;
     //stuff for save & load
     private String savePath;
     private TextField fieldSavePath;
@@ -100,21 +114,29 @@ public class NARPasswordJavaFX extends Application{
     private String settingsJson;
     enum SaveDialogMode{SAVE,LOAD};
     
-    public static void main(String[] args){
+    public static void main(String[] args)
+    {
         Application.launch(args);
     }
     
     @Override
-    public void start(Stage primaryStage){
+    public void start(Stage primaryStage)
+    {
     	this.primaryStage=primaryStage;
     	SplitPane splitPane=new SplitPane();
-    	//splitPane.
-    	
+
+    	//load fonts
+    	double size=Font.getDefault().getSize()/*1.2*/;
+    	Font fontBold=(Font.loadFont("file:resources/fonts/Ubuntu-B.ttf",size));
+    	Font fontMono=(Font.loadFont("file:resources/fonts/UbuntuMono-R.ttf",size));
+
     	//left side of UI
     	VBox leftPane=new VBox();
 
     	//caption
     	Label passwordLabel=new Label("Passwords");
+    	passwordLabel.setPadding(new Insets(2,2,2,2));
+    	passwordLabel.setFont(fontBold);
         passwordLabel.setAlignment(Pos.BASELINE_LEFT);
         leftPane.getChildren().add(passwordLabel);
 
@@ -126,9 +148,11 @@ public class NARPasswordJavaFX extends Application{
         this.passwordList.setItems(items);
         this.passwordList.getSelectionModel().select(0);
         this.lastSelectionIndex=0;
-        this.passwordList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PasswordSetting>() {
+        this.passwordList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PasswordSetting>()
+        {
             @Override
-            public void changed(ObservableValue<? extends PasswordSetting> observable,PasswordSetting oldValue,PasswordSetting newValue){
+            public void changed(ObservableValue<? extends PasswordSetting> observable,PasswordSetting oldValue,PasswordSetting newValue)
+            {
                 int currentSelectionIndex=passwordList.getSelectionModel().getSelectedIndex();
                 if(currentSelectionIndex==lastSelectionIndex)
                 {
@@ -198,9 +222,11 @@ public class NARPasswordJavaFX extends Application{
         this.listRemoveButton=new Button();
         this.listRemoveButton.setDisable(true);
         this.listRemoveButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("list-remove.png"))));
-        this.listRemoveButton.setOnAction(new EventHandler<ActionEvent>(){
+        this.listRemoveButton.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t){
+            public void handle(ActionEvent t)
+            {
             	//sanity check
             	if(passwordList.getItems().size()<1)
             	{
@@ -226,7 +252,6 @@ public class NARPasswordJavaFX extends Application{
 
         leftPane.getChildren().add(toolbar);
 
-        
     	//right side of UI
         GridPane rightPane=new GridPane();
         rightPane.setHgap(2);
@@ -234,14 +259,18 @@ public class NARPasswordJavaFX extends Application{
 
         //Pass phrase
         HBox boxPassPhrase=new HBox();
+        boxPassPhrase.setAlignment(hboxPos);
+        boxPassPhrase.setPadding(hboxInsets);
         Label labelPassPhrase=new Label("Pass Phrase: ");
         labelPassPhrase.setPrefWidth(120);
         labelPassPhrase.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPassPhrase=new PasswordField();
         this.fieldPassPhrase.setPrefColumnCount(32);
-        this.fieldPassPhrase.setOnKeyReleased(new EventHandler<KeyEvent>(){
+        this.fieldPassPhrase.setOnKeyReleased(new EventHandler<KeyEvent>()
+        {
             @Override 
-            public void handle(KeyEvent t){
+            public void handle(KeyEvent t)
+            {
                 generatePassword();
             }
         });        
@@ -258,14 +287,18 @@ public class NARPasswordJavaFX extends Application{
         
         //Password name
         HBox boxPasswordName=new HBox();
+        boxPasswordName.setPadding(hboxInsets);
+        boxPasswordName.setAlignment(hboxPos);
         Label labelPasswordName=new Label("Password Name: ");
         labelPasswordName.setPrefWidth(120);
         labelPasswordName.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPasswordName=new TextField(defaultPassword.getPasswordName());
         this.fieldPasswordName.setPrefColumnCount(32);
-        this.fieldPasswordName.setOnKeyReleased(new EventHandler<KeyEvent>(){
+        this.fieldPasswordName.setOnKeyReleased(new EventHandler<KeyEvent>()
+        {
             @Override 
-            public void handle(KeyEvent t){
+            public void handle(KeyEvent t)
+            {
                 generatePassword();
             }
         });           
@@ -282,20 +315,27 @@ public class NARPasswordJavaFX extends Application{
         
         //Password
         HBox boxPassword=new HBox();
+        boxPassword.setPadding(hboxInsets);
+        boxPassword.setAlignment(hboxPos);
         Label labelPassword=new Label("Password: ");
         labelPassword.setPrefWidth(120);
         labelPassword.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPassword=new TextField();
-        this.fieldPassword.setPrefColumnCount(32);
+        this.fieldPassword.setFont(fontMono);
+        this.fieldPassword.setStyle("-fx-background-color: #f5f5f5;");
+        this.fieldPassword.setPrefColumnCount(60);
         this.fieldPassword.setEditable(false);
         this.buttonCopy=new Button("Copy");
-        this.buttonCopy.setOnAction(new EventHandler<ActionEvent>(){
+        this.buttonCopy.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t){
+            public void handle(ActionEvent t)
+            {
                 final Clipboard clipboard=Clipboard.getSystemClipboard();
                 final ClipboardContent content=new ClipboardContent();
                 content.putString(fieldPassword.getText());
                 clipboard.setContent(content);
+                passwordInClipboard=true;
             }
         });
         boxPassword.getChildren().addAll(labelPassword,this.fieldPassword,this.buttonCopy);
@@ -303,15 +343,20 @@ public class NARPasswordJavaFX extends Application{
         
         //Password options
         HBox boxPasswordOptions=new HBox();
+        boxPasswordOptions.setPadding(hboxInsets);
         Label labelPasswordOptions=new Label("Password Options");
+        labelPasswordOptions.setFont(fontBold);
         boxPasswordOptions.getChildren().addAll(labelPasswordOptions);
         rightPane.add(boxPasswordOptions,0,5);
         
         //Lowercase checkbox
         this.checkLowerCase=new CheckBox("Use lower case characters (a-z)");
-        this.checkLowerCase.setOnAction(new EventHandler<ActionEvent>(){
+        this.checkLowerCase.setPadding(checkboxInsets);
+        this.checkLowerCase.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t) {
+            public void handle(ActionEvent t)
+            {
                 generatePassword();
             }
         });
@@ -320,9 +365,12 @@ public class NARPasswordJavaFX extends Application{
         
         //Uppercase checkbox
         this.checkUpperCase=new CheckBox("Use upper case characters (A-Z)");
-        this.checkUpperCase.setOnAction(new EventHandler<ActionEvent>(){
+        this.checkUpperCase.setPadding(checkboxInsets);
+        this.checkUpperCase.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t) {
+            public void handle(ActionEvent t)
+            {
                 generatePassword();
             }
         });
@@ -331,9 +379,12 @@ public class NARPasswordJavaFX extends Application{
 
         //Numbers checkbox
         this.checkNumbers=new CheckBox("Use numbers (0-9)");
-        this.checkNumbers.setOnAction(new EventHandler<ActionEvent>(){
+        this.checkNumbers.setPadding(checkboxInsets);
+        this.checkNumbers.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t) {
+            public void handle(ActionEvent t)
+            {
                 generatePassword();
             }
         });
@@ -342,9 +393,12 @@ public class NARPasswordJavaFX extends Application{
 
         //Special characters checkbox
         this.checkSpecialCharacters=new CheckBox("Use special characters (!@#$%^&*-=+:;?,.)");
-        this.checkSpecialCharacters.setOnAction(new EventHandler<ActionEvent>(){
+        this.checkSpecialCharacters.setPadding(checkboxInsets);
+        this.checkSpecialCharacters.setOnAction(new EventHandler<ActionEvent>()
+        {
             @Override 
-            public void handle(ActionEvent t) {
+            public void handle(ActionEvent t)
+            {
                 generatePassword();
             }
         });
@@ -353,6 +407,8 @@ public class NARPasswordJavaFX extends Application{
         
         //Password length
         HBox boxPasswordLength=new HBox();
+        boxPasswordLength.setPadding(hboxInsets);
+        boxPasswordLength.setAlignment(hboxPos);
         Label labelPasswordLength=new Label("Password Length: ");
         labelPasswordLength.setPrefWidth(120);
         labelPasswordLength.setAlignment(Pos.BASELINE_RIGHT);
@@ -367,8 +423,10 @@ public class NARPasswordJavaFX extends Application{
         this.sliderPasswordLength.setMinorTickCount(0);
         this.sliderPasswordLength.setValue(32);
         this.sliderPasswordLength.setSnapToTicks(true);
-        this.sliderPasswordLength.valueProperty().addListener(new ChangeListener<Number>(){
-            public void changed(ObservableValue<? extends Number> ov, Number old_val, Number new_val) {
+        this.sliderPasswordLength.valueProperty().addListener(new ChangeListener<Number>()
+        {
+            public void changed(ObservableValue<? extends Number> ov,Number old_val,Number new_val)
+            {
                 sliderPasswordLength.setTooltip(new Tooltip(new_val.toString()));
                 generatePassword();
             }
@@ -379,6 +437,8 @@ public class NARPasswordJavaFX extends Application{
 
         //Password notes
         HBox boxPasswordNotes=new HBox();
+        boxPasswordNotes.setPadding(hboxInsets);
+        boxPasswordNotes.setAlignment(hboxPos);
         Label labelPasswordNotes=new Label("Password Notes: ");
         labelPasswordNotes.setPrefWidth(120);
         labelPasswordNotes.setAlignment(Pos.BASELINE_RIGHT);
@@ -386,12 +446,144 @@ public class NARPasswordJavaFX extends Application{
         this.fieldPasswordNotes.setPrefColumnCount(32);
         boxPasswordNotes.getChildren().addAll(labelPasswordNotes,this.fieldPasswordNotes);
         rightPane.add(boxPasswordNotes,0,11);
+
+        //Password options
+        HBox boxUIOptions=new HBox();
+        boxUIOptions.setPadding(hboxInsets);
+        Label labelUIOptions=new Label("UI Options");
+        labelUIOptions.setFont(fontBold);
+        boxUIOptions.getChildren().addAll(labelUIOptions);
+        rightPane.add(boxUIOptions,0,12);
+        
+        //clear clipboard
+        HBox boxClearClipboard=new HBox();
+        boxClearClipboard.setPadding(checkboxInsets);
+        boxClearClipboard.setAlignment(hboxPos);
+        this.checkClearClipboard=new CheckBox("Clear password from clipboard after ");
+        this.checkClearClipboard.setSelected(true);
+        this.checkClearClipboard.setOnAction(new EventHandler<ActionEvent>()
+        {
+            @Override 
+            public void handle(ActionEvent t)
+            {
+            	lastClipboardClear=0;
+            }
+        });        
+        this.fieldClearClipboardSeconds=new TextField();
+        this.fieldClearClipboardSeconds.setPrefColumnCount(4);
+        this.fieldClearClipboardSeconds.setText("60");
+        this.fieldClearClipboardSeconds.setOnKeyReleased(new EventHandler<KeyEvent>()
+        {
+            @Override 
+            public void handle(KeyEvent t)
+            {
+            	lastClipboardClear=0;
+                String newText=fieldClearClipboardSeconds.getText();
+                try
+                {
+                	int value=Integer.parseInt(newText);
+                	if(value<0){
+                		throw(new Exception(""));
+                	}
+                	fieldClearClipboardSeconds.setStyle("");
+                }
+                catch(Exception x)
+                {
+                	fieldClearClipboardSeconds.setStyle("-fx-background-color: red;");
+                }
+            }
+        });           
+        Label labelClearClipboardSeconds=new Label(" seconds");
+        labelClearClipboardSeconds.setPrefWidth(120);
+        labelClearClipboardSeconds.setAlignment(Pos.BASELINE_LEFT);
+        boxClearClipboard.getChildren().addAll(this.checkClearClipboard,this.fieldClearClipboardSeconds,labelClearClipboardSeconds);
+        rightPane.add(boxClearClipboard,0,13);
+
+        //clear passphrase
+        HBox boxClearPassPhrase=new HBox();
+        boxClearPassPhrase.setPadding(checkboxInsets);
+        boxClearPassPhrase.setAlignment(hboxPos);
+        this.checkClearPassPhrase=new CheckBox("Clear Pass Phrase after ");
+        this.checkClearPassPhrase.setSelected(true);
+        this.checkClearPassPhrase.setOnAction(new EventHandler<ActionEvent>()
+        {
+            @Override 
+            public void handle(ActionEvent t) {
+            	lastPassPhraseClear=0;
+            }
+        });        
+        this.fieldClearPassPhraseSeconds=new TextField();
+        this.fieldClearPassPhraseSeconds.setPrefColumnCount(4);
+        this.fieldClearPassPhraseSeconds.setText("600");
+        this.fieldClearPassPhraseSeconds.setOnKeyReleased(new EventHandler<KeyEvent>()
+        {
+            @Override 
+            public void handle(KeyEvent t)
+            {
+            	lastClipboardClear=0;
+                String newText=fieldClearPassPhraseSeconds.getText();
+                try{
+                	int value=Integer.parseInt(newText);
+                	if(value<0){
+                		throw(new Exception(""));
+                	}
+                	fieldClearPassPhraseSeconds.setStyle("");
+                }catch(Exception x){
+                	fieldClearPassPhraseSeconds.setStyle("-fx-background-color: red;");
+                }
+            }
+        });           
+        Label labelClearPassPhraseSeconds=new Label(" seconds");
+        labelClearPassPhraseSeconds.setPrefWidth(120);
+        labelClearPassPhraseSeconds.setAlignment(Pos.BASELINE_LEFT);
+        boxClearPassPhrase.getChildren().addAll(this.checkClearPassPhrase,this.fieldClearPassPhraseSeconds,labelClearPassPhraseSeconds);
+        rightPane.add(boxClearPassPhrase,0,14);
+
+        //setup timer
+        Timeline timeline=new Timeline(new KeyFrame(Duration.seconds(1),new EventHandler<ActionEvent>(){
+        	@Override
+        	public void handle(ActionEvent e)
+        	{
+        		if(passwordInClipboard&&checkClearClipboard.isSelected())
+        		{
+        			try{
+        				int value=Integer.parseInt(fieldClearClipboardSeconds.getText());
+        				if(lastClipboardClear>value){
+        					lastClipboardClear=0;
+        	                final Clipboard clipboard=Clipboard.getSystemClipboard();
+        	                final ClipboardContent content=new ClipboardContent();
+        	                content.putString("");
+        	                clipboard.setContent(content);
+        	                passwordInClipboard=false;
+        				}else{
+        					lastClipboardClear++;
+        				}
+        			}catch(Exception x){/* do nothing */}
+        		}
+        		if(checkClearPassPhrase.isSelected())
+        		{
+        			try{
+        				int value=Integer.parseInt(fieldClearPassPhraseSeconds.getText());
+        				if(lastPassPhraseClear>value){
+        					lastPassPhraseClear=0;
+        					fieldPassPhrase.setText("");
+        					generatePassword();
+        				}else{
+        					lastPassPhraseClear++;
+        				}
+        			}catch(Exception x){/* do nothing */}
+        		}
+        	}
+        }));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
         
         //setup main windows
         splitPane.getItems().add(leftPane);
         splitPane.getItems().add(rightPane);
         splitPane.setDividerPositions(0.25f);
         Scene scene=new Scene(splitPane);
+        scene.getStylesheets().add("narpasswordfx.css");
         primaryStage.setTitle("NARPassword for JavaFX v1.1");
         primaryStage.getIcons().add(new Image(NARPasswordJavaFX.class.getResourceAsStream("narpas-icon-16.png")));
         primaryStage.setResizable(false);
@@ -456,9 +648,11 @@ public class NARPasswordJavaFX extends Application{
         browseButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-open.png"))));
         if(mode==SaveDialogMode.SAVE)
         {
-            browseButton.setOnAction(new EventHandler<ActionEvent>(){
+            browseButton.setOnAction(new EventHandler<ActionEvent>()
+            {
            		@Override 
-           		public void handle(ActionEvent t){
+           		public void handle(ActionEvent t) 
+           		{
            			FileChooser fileChooser=new FileChooser();
            			fileChooser.setTitle("Select save location");
            			fileChooser.setInitialFileName(savePath);
@@ -475,9 +669,11 @@ public class NARPasswordJavaFX extends Application{
         }
         else
         {
-            browseButton.setOnAction(new EventHandler<ActionEvent>(){
+            browseButton.setOnAction(new EventHandler<ActionEvent>()
+            {
            		@Override 
-           		public void handle(ActionEvent t){
+           		public void handle(ActionEvent t)
+           		{
            			FileChooser fileChooser=new FileChooser();
            			fileChooser.setTitle("Select password file to load");
            			fileChooser.setInitialFileName(savePath);
@@ -504,7 +700,8 @@ public class NARPasswordJavaFX extends Application{
         this.fieldSavePassword.setPrefColumnCount(40);
         if(mode==SaveDialogMode.SAVE)
         {
-	        this.fieldSavePassword.setOnKeyReleased(new EventHandler<KeyEvent>(){
+	        this.fieldSavePassword.setOnKeyReleased(new EventHandler<KeyEvent>()
+	        {
 	            @Override 
 	            public void handle(KeyEvent t){
 	                verifyEncryptionPasswordMatch();
@@ -524,9 +721,11 @@ public class NARPasswordJavaFX extends Application{
             labelConfirmEncryptionPassword.setAlignment(Pos.BASELINE_RIGHT);
             this.fieldConfirmSavePassword=new PasswordField();
             this.fieldConfirmSavePassword.setPrefColumnCount(40);
-	        this.fieldConfirmSavePassword.setOnKeyReleased(new EventHandler<KeyEvent>(){
+	        this.fieldConfirmSavePassword.setOnKeyReleased(new EventHandler<KeyEvent>()
+	        {
 	            @Override 
-	            public void handle(KeyEvent t){
+	            public void handle(KeyEvent t)
+	            {
 	                verifyEncryptionPasswordMatch();
 	            }
 	        });
@@ -549,9 +748,11 @@ public class NARPasswordJavaFX extends Application{
         {
             this.saveLoadButton=new Button("Save");
             this.saveLoadButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-save.png"))));
-            this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>(){
+            this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>()
+            {
         		@Override 
-        		public void handle(ActionEvent t){
+        		public void handle(ActionEvent t)
+        		{
         			//encrypt password settings list
         			List<PasswordSetting> settingsList=passwordList.getItems();
         			settingsJson=new Gson().toJson(settingsList);
@@ -575,9 +776,11 @@ public class NARPasswordJavaFX extends Application{
         {
             this.saveLoadButton=new Button("Load");
             this.saveLoadButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-open.png"))));
-            this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>(){
+            this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>()
+            {
         		@Override 
-        		public void handle(ActionEvent t){
+        		public void handle(ActionEvent t)
+        		{
         			String encryptedString=null;
         			try
         			{
@@ -596,7 +799,9 @@ public class NARPasswordJavaFX extends Application{
 	        				List<PasswordSetting> list=new Gson().fromJson(json,listType);
 	        				passwordList.getItems().clear();
 	        				passwordList.getItems().addAll(list);
-	        				System.out.println(json);
+	        				passwordList.getSelectionModel().select(0);
+	        				passwordList.getFocusModel().focus(0);
+	        				updateFormFields(passwordList.getItems().get(0));
 	            			((Node)(t.getSource())).getScene().getWindow().hide();
 	            		}
 	        			catch(Exception x)
@@ -614,9 +819,11 @@ public class NARPasswordJavaFX extends Application{
         toolbar.getItems().add(this.saveLoadButton);
         Button cancelButton=new Button("Close");
         cancelButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("process-stop.png"))));
-        cancelButton.setOnAction(new EventHandler<ActionEvent>(){
+        cancelButton.setOnAction(new EventHandler<ActionEvent>()
+        {
     		@Override 
-    		public void handle(ActionEvent t){
+    		public void handle(ActionEvent t)
+    		{
     			((Node)(t.getSource())).getScene().getWindow().hide();
             }
         });
@@ -625,6 +832,7 @@ public class NARPasswordJavaFX extends Application{
         pane.add(toolbarbox,0,paneY);
         
         Scene scene=new Scene(pane);
+        scene.getStylesheets().add("narpasswordfx.css");
         if(mode==SaveDialogMode.LOAD) 
         {
             dialog.setTitle("Load");
@@ -639,8 +847,6 @@ public class NARPasswordJavaFX extends Application{
     	dialog.initOwner(this.primaryStage);
     	dialog.initModality(Modality.APPLICATION_MODAL); 
     	dialog.showAndWait();
-
-    	
     }
     
     private void verifyEncryptionPasswordMatch()
@@ -655,8 +861,6 @@ public class NARPasswordJavaFX extends Application{
     		this.labelSaveLoadError.setText("Passwords don't match");
     		this.saveLoadButton.setDisable(true);
     	}
-    	
-    	
     }
     
     private void generatePassword()
@@ -670,7 +874,8 @@ public class NARPasswordJavaFX extends Application{
         boolean useSpecialCharacters=this.checkSpecialCharacters.isSelected();
         int basePasswordLength=(int)this.sliderPasswordLength.getValue()/8;
         String password="";
-        if((passPhrase.length()>0)&&(passwordName.length()>0)&&(!passPhrase.equals(passwordName))&&(useLCase||useUCase||useNumbers||useSpecialCharacters)){
+        if((passPhrase.length()>0)&&(passwordName.length()>0)&&(!passPhrase.equals(passwordName))&&(useLCase||useUCase||useNumbers||useSpecialCharacters))
+        {
             password=Narpas.generatePassword(passPhrase,passwordName,useLCase,useUCase,useNumbers,useSpecialCharacters,basePasswordLength);
         }
         this.fieldPassword.setText(password);

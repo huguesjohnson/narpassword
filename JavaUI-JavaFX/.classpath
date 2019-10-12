@@ -7,13 +7,7 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.base.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.controls.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.fxml.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.graphics.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.media.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.swing.jar"/>
-	<classpathentry kind="lib" path="/usr/share/openjfx/lib/javafx.web.jar"/>
 	<classpathentry kind="lib" path="/NARPassword-JavaLib/lib/gson-2.8.5.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JavaFX"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

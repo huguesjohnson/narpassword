@@ -27,10 +27,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ********************************************************************************
-3rd party libraries
+3rd party code & assets
 ********************************************************************************
+Tango Desktop icons are public domain
+see http://tango.freedesktop.org/Tango_Desktop_Project
+
 gson
 see https://github.com/google/gson/blob/master/LICENSE
+
+Ubuntu Fonts
+Copyright 2010,2011 Canonical Ltd.
+Licensed under the Ubuntu Font Licence, Version 1.0.
+https://launchpad.net/ubuntu-font-licence
 
 JGoodies Forms
 /*
