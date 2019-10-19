@@ -105,7 +105,7 @@ public class NARPasswordJavaFX extends Application{
     private Insets checkboxInsets=new Insets(4,4,0,4);
     private Pos hboxPos=Pos.CENTER_LEFT;
     //stuff for save & load
-    private String savePath;
+    private static String savePath;
     private TextField fieldSavePath;
     private PasswordField fieldSavePassword;
     private PasswordField fieldConfirmSavePassword;
@@ -113,10 +113,52 @@ public class NARPasswordJavaFX extends Application{
     private Button saveLoadButton;
     private String settingsJson;
     enum SaveDialogMode{SAVE,LOAD};
+    //fonts
+	private double size=Font.getDefault().getSize();
+	private Font fontRegular=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-R.ttf"),size));
+	private Font fontBold=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-B.ttf"),size));
+	private Font fontMono=(Font.loadFont(this.getClass().getResourceAsStream("UbuntuMono-R.ttf"),size));
     
     public static void main(String[] args)
     {
-        Application.launch(args);
+    	//check command line
+        if((args!=null)&&(args.length>0))
+        {
+        	for(int i=0;i<args.length;i++)
+        	{
+        		try
+        		{
+            		if(args[i].contains("="))
+            		{
+            			String[] split=args[i].split("=");
+            			if(split.length==2)
+            			{
+            				if(split[0].toLowerCase().equals("--passwordlist"))
+            				{
+            					savePath=split[1];
+            				}
+            				else
+            				{
+            					throw(new Exception());
+            				}
+            			}
+            			else
+            			{
+            				throw(new Exception());
+            			}
+            			
+            		}
+        			
+        		}
+        		catch(Exception x)
+        		{
+        			System.out.println("Invalid command line argument: "+args[i]);
+        		}
+        	}
+        }
+    	
+    	//launch
+    	Application.launch(args);
     }
     
     @Override
@@ -125,14 +167,8 @@ public class NARPasswordJavaFX extends Application{
     	this.primaryStage=primaryStage;
     	SplitPane splitPane=new SplitPane();
 
-    	//load fonts
-    	double size=Font.getDefault().getSize()/*1.2*/;
-    	Font fontBold=(Font.loadFont("file:resources/fonts/Ubuntu-B.ttf",size));
-    	Font fontMono=(Font.loadFont("file:resources/fonts/UbuntuMono-R.ttf",size));
-
     	//left side of UI
     	VBox leftPane=new VBox();
-
     	//caption
     	Label passwordLabel=new Label("Passwords");
     	passwordLabel.setPadding(new Insets(2,2,2,2));
@@ -183,6 +219,7 @@ public class NARPasswordJavaFX extends Application{
         //listview buttons
         ToolBar toolbar=new ToolBar();
         this.openButton=new Button();
+        this.openButton.setFont(fontRegular);
         this.openButton.setTooltip(new Tooltip("Open a password list.."));
         this.openButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-open.png"))));
         this.openButton.setOnAction(new EventHandler<ActionEvent>(){
@@ -194,6 +231,7 @@ public class NARPasswordJavaFX extends Application{
         toolbar.getItems().add(this.openButton);
 
         this.saveButton=new Button();
+        this.saveButton.setFont(fontRegular);
         this.saveButton.setTooltip(new Tooltip("Save password list.."));
         this.saveButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-save.png"))));
         this.saveButton.setOnAction(new EventHandler<ActionEvent>(){
@@ -207,6 +245,7 @@ public class NARPasswordJavaFX extends Application{
         toolbar.getItems().add(new Separator());
         
         this.listAddButton=new Button();
+        this.listAddButton.setFont(fontRegular);
         this.listAddButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("list-add.png"))));
         this.listAddButton.setOnAction(new EventHandler<ActionEvent>(){
             @Override 
@@ -220,6 +259,7 @@ public class NARPasswordJavaFX extends Application{
         toolbar.getItems().add(this.listAddButton);
 
         this.listRemoveButton=new Button();
+        this.listRemoveButton.setFont(fontRegular);
         this.listRemoveButton.setDisable(true);
         this.listRemoveButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("list-remove.png"))));
         this.listRemoveButton.setOnAction(new EventHandler<ActionEvent>()
@@ -262,6 +302,7 @@ public class NARPasswordJavaFX extends Application{
         boxPassPhrase.setAlignment(hboxPos);
         boxPassPhrase.setPadding(hboxInsets);
         Label labelPassPhrase=new Label("Pass Phrase: ");
+        labelPassPhrase.setFont(fontRegular);
         labelPassPhrase.setPrefWidth(120);
         labelPassPhrase.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPassPhrase=new PasswordField();
@@ -282,6 +323,7 @@ public class NARPasswordJavaFX extends Application{
         Label labelPassPhraseHintSpacer=new Label(" ");
         labelPassPhraseHintSpacer.setPrefWidth(120);
         Label labelPassPhraseHint=new Label("i.e.'I like pie' or 'Please no more California songs'");
+        labelPassPhraseHint.setFont(fontRegular);
         boxPassPhraseHint.getChildren().addAll(labelPassPhraseHintSpacer,labelPassPhraseHint);
         rightPane.add(boxPassPhraseHint,0,1);
         
@@ -290,6 +332,7 @@ public class NARPasswordJavaFX extends Application{
         boxPasswordName.setPadding(hboxInsets);
         boxPasswordName.setAlignment(hboxPos);
         Label labelPasswordName=new Label("Password Name: ");
+        labelPasswordName.setFont(fontRegular);
         labelPasswordName.setPrefWidth(120);
         labelPasswordName.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPasswordName=new TextField(defaultPassword.getPasswordName());
@@ -310,6 +353,7 @@ public class NARPasswordJavaFX extends Application{
         Label labelPasswordNameHintSpacer=new Label(" ");
         labelPasswordNameHintSpacer.setPrefWidth(120);
         Label labelPasswordNameHint=new Label("i.e.'Facebook' or 'yourname@gmail.com'");
+        labelPasswordNameHint.setFont(fontRegular);
         boxPasswordNameHint.getChildren().addAll(labelPasswordNameHintSpacer,labelPasswordNameHint);
         rightPane.add(boxPasswordNameHint,0,3);
         
@@ -318,6 +362,7 @@ public class NARPasswordJavaFX extends Application{
         boxPassword.setPadding(hboxInsets);
         boxPassword.setAlignment(hboxPos);
         Label labelPassword=new Label("Password: ");
+        labelPassword.setFont(fontRegular);
         labelPassword.setPrefWidth(120);
         labelPassword.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPassword=new TextField();
@@ -326,6 +371,7 @@ public class NARPasswordJavaFX extends Application{
         this.fieldPassword.setPrefColumnCount(60);
         this.fieldPassword.setEditable(false);
         this.buttonCopy=new Button("Copy");
+        this.buttonCopy.setFont(fontRegular);
         this.buttonCopy.setOnAction(new EventHandler<ActionEvent>()
         {
             @Override 
@@ -351,6 +397,7 @@ public class NARPasswordJavaFX extends Application{
         
         //Lowercase checkbox
         this.checkLowerCase=new CheckBox("Use lower case characters (a-z)");
+        this.checkLowerCase.setFont(fontRegular);
         this.checkLowerCase.setPadding(checkboxInsets);
         this.checkLowerCase.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -365,6 +412,7 @@ public class NARPasswordJavaFX extends Application{
         
         //Uppercase checkbox
         this.checkUpperCase=new CheckBox("Use upper case characters (A-Z)");
+        this.checkUpperCase.setFont(fontRegular);
         this.checkUpperCase.setPadding(checkboxInsets);
         this.checkUpperCase.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -379,6 +427,7 @@ public class NARPasswordJavaFX extends Application{
 
         //Numbers checkbox
         this.checkNumbers=new CheckBox("Use numbers (0-9)");
+        this.checkNumbers.setFont(fontRegular);
         this.checkNumbers.setPadding(checkboxInsets);
         this.checkNumbers.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -393,6 +442,7 @@ public class NARPasswordJavaFX extends Application{
 
         //Special characters checkbox
         this.checkSpecialCharacters=new CheckBox("Use special characters (!@#$%^&*-=+:;?,.)");
+        this.checkSpecialCharacters.setFont(fontRegular);
         this.checkSpecialCharacters.setPadding(checkboxInsets);
         this.checkSpecialCharacters.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -410,6 +460,7 @@ public class NARPasswordJavaFX extends Application{
         boxPasswordLength.setPadding(hboxInsets);
         boxPasswordLength.setAlignment(hboxPos);
         Label labelPasswordLength=new Label("Password Length: ");
+        labelPasswordLength.setFont(fontRegular);
         labelPasswordLength.setPrefWidth(120);
         labelPasswordLength.setAlignment(Pos.BASELINE_RIGHT);
         this.sliderPasswordLength=new Slider();
@@ -440,6 +491,7 @@ public class NARPasswordJavaFX extends Application{
         boxPasswordNotes.setPadding(hboxInsets);
         boxPasswordNotes.setAlignment(hboxPos);
         Label labelPasswordNotes=new Label("Password Notes: ");
+        labelPasswordNotes.setFont(fontRegular);
         labelPasswordNotes.setPrefWidth(120);
         labelPasswordNotes.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldPasswordNotes=new TextField();
@@ -460,6 +512,7 @@ public class NARPasswordJavaFX extends Application{
         boxClearClipboard.setPadding(checkboxInsets);
         boxClearClipboard.setAlignment(hboxPos);
         this.checkClearClipboard=new CheckBox("Clear password from clipboard after ");
+        this.checkClearClipboard.setFont(fontRegular);
         this.checkClearClipboard.setSelected(true);
         this.checkClearClipboard.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -470,6 +523,7 @@ public class NARPasswordJavaFX extends Application{
             }
         });        
         this.fieldClearClipboardSeconds=new TextField();
+        this.fieldClearClipboardSeconds.setFont(fontRegular);
         this.fieldClearClipboardSeconds.setPrefColumnCount(4);
         this.fieldClearClipboardSeconds.setText("60");
         this.fieldClearClipboardSeconds.setOnKeyReleased(new EventHandler<KeyEvent>()
@@ -494,6 +548,7 @@ public class NARPasswordJavaFX extends Application{
             }
         });           
         Label labelClearClipboardSeconds=new Label(" seconds");
+        labelClearClipboardSeconds.setFont(fontRegular);
         labelClearClipboardSeconds.setPrefWidth(120);
         labelClearClipboardSeconds.setAlignment(Pos.BASELINE_LEFT);
         boxClearClipboard.getChildren().addAll(this.checkClearClipboard,this.fieldClearClipboardSeconds,labelClearClipboardSeconds);
@@ -504,6 +559,7 @@ public class NARPasswordJavaFX extends Application{
         boxClearPassPhrase.setPadding(checkboxInsets);
         boxClearPassPhrase.setAlignment(hboxPos);
         this.checkClearPassPhrase=new CheckBox("Clear Pass Phrase after ");
+        this.checkClearPassPhrase.setFont(fontRegular);
         this.checkClearPassPhrase.setSelected(true);
         this.checkClearPassPhrase.setOnAction(new EventHandler<ActionEvent>()
         {
@@ -513,6 +569,7 @@ public class NARPasswordJavaFX extends Application{
             }
         });        
         this.fieldClearPassPhraseSeconds=new TextField();
+        this.fieldClearPassPhraseSeconds.setFont(fontRegular);
         this.fieldClearPassPhraseSeconds.setPrefColumnCount(4);
         this.fieldClearPassPhraseSeconds.setText("600");
         this.fieldClearPassPhraseSeconds.setOnKeyReleased(new EventHandler<KeyEvent>()
@@ -534,6 +591,7 @@ public class NARPasswordJavaFX extends Application{
             }
         });           
         Label labelClearPassPhraseSeconds=new Label(" seconds");
+        labelClearPassPhraseSeconds.setFont(fontRegular);
         labelClearPassPhraseSeconds.setPrefWidth(120);
         labelClearPassPhraseSeconds.setAlignment(Pos.BASELINE_LEFT);
         boxClearPassPhrase.getChildren().addAll(this.checkClearPassPhrase,this.fieldClearPassPhraseSeconds,labelClearPassPhraseSeconds);
@@ -589,6 +647,12 @@ public class NARPasswordJavaFX extends Application{
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
+        
+        //check if a password list was passed at the command-line
+        if(savePath!=null)
+        {
+        	showSaveLoadDialog(SaveDialogMode.LOAD);
+        }
     }
     
     private void updateSelectedListItem()
@@ -629,22 +693,27 @@ public class NARPasswordJavaFX extends Application{
     	Stage dialog=new Stage();
 
         GridPane pane=new GridPane();
-        pane.setHgap(2);
-        pane.setVgap(2);
+        pane.setHgap(4);
+        pane.setVgap(4);
         int paneY=0;
         
         //file path
         HBox boxFilePathBox=new HBox();
+        boxFilePathBox.setAlignment(hboxPos);
+        boxFilePathBox.setPadding(hboxInsets);        
         Label labelFilePath=new Label("File path: ");
+        labelFilePath.setFont(fontRegular);
         labelFilePath.setPrefWidth(180);
         labelFilePath.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldSavePath=new TextField();
+        this.fieldSavePath.setFont(fontRegular);
         this.fieldSavePath.setPrefColumnCount(40);
-        if((this.savePath!=null)&&(this.savePath.length()>0))
+        if((savePath!=null)&&(savePath.length()>0))
         {
-        	this.fieldSavePath.setText(this.savePath);
+        	this.fieldSavePath.setText(savePath);
         }
         Button browseButton=new Button("Browse");
+        browseButton.setFont(fontRegular);
         browseButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-open.png"))));
         if(mode==SaveDialogMode.SAVE)
         {
@@ -693,7 +762,10 @@ public class NARPasswordJavaFX extends Application{
 
         //encryption password
         HBox encryptionPasswordBox=new HBox();
+        encryptionPasswordBox.setAlignment(hboxPos);
+        encryptionPasswordBox.setPadding(hboxInsets);        
         Label labelEncryptionPassword=new Label("Encryption password: ");
+        labelEncryptionPassword.setFont(fontRegular);
         labelEncryptionPassword.setPrefWidth(180);
         labelEncryptionPassword.setAlignment(Pos.BASELINE_RIGHT);
         this.fieldSavePassword=new PasswordField();
@@ -716,7 +788,10 @@ public class NARPasswordJavaFX extends Application{
         if(mode==SaveDialogMode.SAVE)
         {
             HBox confirmEncryptionPasswordBox=new HBox();
+            confirmEncryptionPasswordBox.setAlignment(hboxPos);
+            confirmEncryptionPasswordBox.setPadding(hboxInsets);        
             Label labelConfirmEncryptionPassword=new Label("Confirm password: ");
+            labelConfirmEncryptionPassword.setFont(fontRegular);
             labelConfirmEncryptionPassword.setPrefWidth(180);
             labelConfirmEncryptionPassword.setAlignment(Pos.BASELINE_RIGHT);
             this.fieldConfirmSavePassword=new PasswordField();
@@ -735,6 +810,7 @@ public class NARPasswordJavaFX extends Application{
         }
         
         this.labelSaveLoadError=new Label("");
+        this.labelSaveLoadError.setFont(fontRegular);
         this.labelSaveLoadError.setPrefWidth(320);
         this.labelSaveLoadError.setAlignment(Pos.BASELINE_LEFT);
         pane.add(this.labelSaveLoadError,0,paneY);
@@ -747,6 +823,7 @@ public class NARPasswordJavaFX extends Application{
         if(mode==SaveDialogMode.SAVE)
         {
             this.saveLoadButton=new Button("Save");
+            this.saveLoadButton.setFont(fontRegular);
             this.saveLoadButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-save.png"))));
             this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>()
             {
@@ -775,6 +852,7 @@ public class NARPasswordJavaFX extends Application{
         else
         {
             this.saveLoadButton=new Button("Load");
+            this.saveLoadButton.setFont(fontRegular);
             this.saveLoadButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("document-open.png"))));
             this.saveLoadButton.setOnAction(new EventHandler<ActionEvent>()
             {
@@ -818,6 +896,7 @@ public class NARPasswordJavaFX extends Application{
         }
         toolbar.getItems().add(this.saveLoadButton);
         Button cancelButton=new Button("Close");
+        cancelButton.setFont(fontRegular);
         cancelButton.setGraphic(new ImageView(new Image(NARPasswordJavaFX.class.getResourceAsStream("process-stop.png"))));
         cancelButton.setOnAction(new EventHandler<ActionEvent>()
         {
