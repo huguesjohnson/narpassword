@@ -114,10 +114,10 @@ public class NARPasswordJavaFX extends Application{
     private String settingsJson;
     enum SaveDialogMode{SAVE,LOAD};
     //fonts
-	private double size=Font.getDefault().getSize();
-	private Font fontRegular=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-R.ttf"),size));
-	private Font fontBold=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-B.ttf"),size));
-	private Font fontMono=(Font.loadFont(this.getClass().getResourceAsStream("UbuntuMono-R.ttf"),size));
+	private static double size;
+	private static Font fontRegular;
+	private static Font fontBold;
+	private static Font fontMono;
     
     public static void main(String[] args)
     {
@@ -164,6 +164,12 @@ public class NARPasswordJavaFX extends Application{
     @Override
     public void start(Stage primaryStage)
     {
+    	//load fonts
+    	size=Font.getDefault().getSize();
+    	fontRegular=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-R.ttf"),size));
+    	fontBold=(Font.loadFont(this.getClass().getResourceAsStream("Ubuntu-B.ttf"),size));
+    	fontMono=(Font.loadFont(this.getClass().getResourceAsStream("UbuntuMono-R.ttf"),size));
+    	
     	this.primaryStage=primaryStage;
     	SplitPane splitPane=new SplitPane();
 
@@ -391,10 +397,11 @@ public class NARPasswordJavaFX extends Application{
         HBox boxPasswordOptions=new HBox();
         boxPasswordOptions.setPadding(hboxInsets);
         Label labelPasswordOptions=new Label("Password Options");
+        labelPasswordOptions.setPadding(new Insets(2,2,2,2));
         labelPasswordOptions.setFont(fontBold);
         boxPasswordOptions.getChildren().addAll(labelPasswordOptions);
         rightPane.add(boxPasswordOptions,0,5);
-        
+
         //Lowercase checkbox
         this.checkLowerCase=new CheckBox("Use lower case characters (a-z)");
         this.checkLowerCase.setFont(fontRegular);
@@ -499,7 +506,7 @@ public class NARPasswordJavaFX extends Application{
         boxPasswordNotes.getChildren().addAll(labelPasswordNotes,this.fieldPasswordNotes);
         rightPane.add(boxPasswordNotes,0,11);
 
-        //Password options
+        //ui options
         HBox boxUIOptions=new HBox();
         boxUIOptions.setPadding(hboxInsets);
         Label labelUIOptions=new Label("UI Options");

@@ -132,7 +132,7 @@ public class MainWindow {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frmNarpassword = new JFrame();
+		frmNarpassword=new JFrame();
 		frmNarpassword.setResizable(false);
 		frmNarpassword.setIconImage(Toolkit.getDefaultToolkit().getImage(MainWindow.class.getResource("/com/huguesjohnson/narpas/swing/resources/narpas-icon-64.png")));
 		frmNarpassword.setTitle("NARPassword 1.0");
