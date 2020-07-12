@@ -1,6 +1,6 @@
 /*
 NARPassword for Java - Application to generate a non-random password
-Copyright (C) 2011-2019 Hugues Johnson
+Copyright (C) 2011-2020 Hugues Johnson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,6 +1,6 @@
 /*
 NARPassword for Java - Application to generate a non-random password
-Copyright (C) 2011-2019 Hugues Johnson
+Copyright (C) 2011-2020 Hugues Johnson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.huguesjohnson.narpas.Narpas;
 import com.huguesjohnson.narpas.PasswordSetting;
+import com.huguesjohnson.narpas.PasswordSettingComparator;
 import com.huguesjohnson.narpas.StringEncryptDecrypt;
 
 import javafx.animation.KeyFrame;
@@ -882,6 +883,7 @@ public class NARPasswordJavaFX extends Application{
 	        				String json=StringEncryptDecrypt.decryptString(fieldSavePassword.getText(),encryptedString);
 	        				Type listType=new TypeToken<ArrayList<PasswordSetting>>(){}.getType();
 	        				List<PasswordSetting> list=new Gson().fromJson(json,listType);
+	        				list.sort(new PasswordSettingComparator());
 	        				passwordList.getItems().clear();
 	        				passwordList.getItems().addAll(list);
 	        				passwordList.getSelectionModel().select(0);
