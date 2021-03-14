@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import url('Ubuntu-R.ttf')>
+<?import url('Ubuntu-B.ttf')>
+<?import url('UbuntuMono-R.ttf')>
+
+<?import javafx.scene.effect.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity"
+	minHeight="-Infinity" minWidth="-Infinity"
+	xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+	stylesheets="narpasswordfx.css"
+	fx:controller="com.huguesjohnson.narpassword.javafx.NARPasswordJavaFXSaveLoadController">
+	<center>
+		<VBox>
+			<children>
+				<!-- file to save/load -->
+				<HBox alignment="CENTER_LEFT">
+					<padding>
+						<Insets top="4.0" right="4.0" bottom="0.0" left="4.0" />
+					</padding>
+					<children>
+						<Label prefWidth="180.0" text="%label_filepath"
+							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_RIGHT"
+							HBox.hgrow="NEVER">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="0.0" />
+							</HBox.margin>
+						</Label>
+						<TextField fx:id="fieldSavePath"
+							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_LEFT"
+							HBox.hgrow="ALWAYS" prefWidth="300.0" editable="true">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="4.0" />
+							</HBox.margin>
+						</TextField>
+						<Button mnemonicParsing="false" disable="false"
+							text="%button_browse" onAction="#onBrowse">
+							<graphic>
+								<ImageView fitHeight="16.0" fitWidth="16.0"
+									pickOnBounds="true" preserveRatio="true">
+									<image>
+										<Image url="@open.png" />
+									</image>
+								</ImageView>
+							</graphic>
+							<tooltip>
+								<Tooltip text="%tooltip_browse" />
+							</tooltip>
+						</Button>
+					</children>
+				</HBox>
+				<!-- encryption password -->
+				<HBox alignment="CENTER_LEFT">
+					<padding>
+						<Insets top="4.0" right="4.0" bottom="0.0" left="4.0" />
+					</padding>
+					<children>
+						<Label prefWidth="180.0" text="%label_encryptionpassword"
+							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_RIGHT"
+							HBox.hgrow="NEVER">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="0.0" />
+							</HBox.margin>
+						</Label>
+						<PasswordField fx:id="fieldSavePassword"
+							prefWidth="300.0" alignment="BASELINE_LEFT" HBox.hgrow="ALWAYS"
+							style="-fx-font-family: 'Ubuntu';"
+							onKeyReleased="#onEncryptionPasswordChange">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="4.0" />
+							</HBox.margin>
+						</PasswordField>
+
+					</children>
+				</HBox>
+				<!-- verify encryption password -->
+				<HBox alignment="CENTER_LEFT">
+					<padding>
+						<Insets top="4.0" right="4.0" bottom="0.0" left="4.0" />
+					</padding>
+					<children>
+						<Label fx:id="labelConfirmPassword" prefWidth="180.0" text="%label_confirmpassword"
+							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_RIGHT"
+							HBox.hgrow="NEVER">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="0.0" />
+							</HBox.margin>
+						</Label>
+						<PasswordField fx:id="fieldConfirmSavePassword"
+							prefWidth="300.0" alignment="BASELINE_LEFT" HBox.hgrow="ALWAYS"
+							style="-fx-font-family: 'Ubuntu';"
+							onKeyReleased="#onEncryptionPasswordChange">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="4.0" />
+							</HBox.margin>
+						</PasswordField>
+					</children>
+				</HBox>
+				<!-- save/load error -->
+				<HBox alignment="CENTER_LEFT">
+					<padding>
+						<Insets top="4.0" right="4.0" bottom="0.0" left="4.0" />
+					</padding>
+					<children>
+						<Label fx:id="labelSaveLoadError" prefWidth="480.0"
+							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_LEFT"
+							HBox.hgrow="ALWAYS">
+							<HBox.margin>
+								<Insets top="0.0" right="0.0" bottom="0.0" left="0.0" />
+							</HBox.margin>
+						</Label>
+					</children>
+				</HBox>
+				<!-- buttons -->
+				<HBox alignment="CENTER_RIGHT">
+					<padding>
+						<Insets top="4.0" right="4.0" bottom="4.0" left="4.0" />
+					</padding>
+					<children>
+						<ToolBar style="-fx-background-color: transparent;">
+							<Button mnemonicParsing="false"
+								style="-fx-font-family: 'Ubuntu';" text="%button_cancel"
+								disable="false" onAction="#onCancel">
+								<graphic>
+									<ImageView fitHeight="16.0" fitWidth="16.0"
+										pickOnBounds="true" preserveRatio="true">
+										<image>
+											<Image url="@cancel.png" />
+										</image>
+									</ImageView>
+								</graphic>
+								<tooltip>
+									<Tooltip text="%tooltip_cancel" />
+								</tooltip>
+							</Button>
+							<Button fx:id="saveLoadButton" mnemonicParsing="false"
+								style="-fx-font-family: 'Ubuntu';" text="%button_save"
+								disable="true" onAction="#onSaveLoad">
+								<graphic>
+									<ImageView fitHeight="16.0" fitWidth="16.0"
+										pickOnBounds="true" preserveRatio="true">
+										<image>
+											<Image url="@save.png" />
+										</image>
+									</ImageView>
+								</graphic>
+								<tooltip>
+									<Tooltip text="%tooltip_save" />
+								</tooltip>
+							</Button>
+						</ToolBar>
+					</children>
+				</HBox>
+			</children>
+		</VBox>
+	</center>
+</BorderPane>
+

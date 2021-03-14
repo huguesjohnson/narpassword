@@ -1,6 +1,6 @@
 /*
 NARPassword for Java - Application to generate a non-random password
-Copyright (C) 2011-2020 Hugues Johnson
+Copyright (C) 2011-2021 Hugues Johnson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +43,7 @@ public abstract class StringEncryptDecrypt{
 	private final static byte[] initializationVector={91,-57,68,92,-11,1,-117,66,46,66,-117,39,-74,-71,117,45};
     private final static IvParameterSpec ivParameterSpec=new IvParameterSpec(initializationVector);
 
-	public final static String encrypt(String passphrase,String stringToEncrypt) throws Exception 
-	{
+	public final static String encrypt(String passphrase,String stringToEncrypt) throws Exception{
         SecretKeyFactory factory=SecretKeyFactory.getInstance(factoryAlgorithm);
         KeySpec keySpec=new PBEKeySpec(passphrase.toCharArray(),salt.getBytes(),iterationCount,keyLength);
         SecretKeySpec secretKey=new SecretKeySpec(factory.generateSecret(keySpec).getEncoded(),keyAlgorithm);
@@ -53,8 +52,7 @@ public abstract class StringEncryptDecrypt{
         return(Base64.getEncoder().encodeToString(cipher.doFinal(stringToEncrypt.getBytes("UTF-8"))));
 	}
 	
-	public final static String decryptString(String passphrase,String encryptedString) throws Exception
-	{
+	public final static String decryptString(String passphrase,String encryptedString) throws Exception{
         SecretKeyFactory factory=SecretKeyFactory.getInstance(factoryAlgorithm);
         KeySpec spec=new PBEKeySpec(passphrase.toCharArray(),salt.getBytes(),iterationCount,keyLength);
         SecretKeySpec secretKey=new SecretKeySpec(factory.generateSecret(spec).getEncoded(),keyAlgorithm);
