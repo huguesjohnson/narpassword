@@ -76,12 +76,15 @@ public class NARPasswordJavaFX extends Application{
         FXMLLoader loader=new FXMLLoader(getClass().getResource("NARPasswordFX.fxml"),resources);
         Scene scene=new Scene(loader.load());        
         NARPasswordJavaFXController controller=(NARPasswordJavaFXController)loader.getController();
-        controller.setSavePath(savePath);
         try{
             stage.getIcons().add(new Image(NARPasswordJavaFX.class.getResourceAsStream("narpas-icon-16.png"))); 
         }catch(Exception x){/* not implemented - just here to prevent application from crashing if for some reason the icon can't be loaded */}
         stage.setScene(scene);
         stage.setTitle(resources.getString("app_title"));
         stage.show();
+        if(savePath!=null){
+            controller.setSavePath(savePath);
+        	controller.showSaveLoadDialog(NARPasswordJavaFXSaveLoadController.SaveDialogMode.LOAD);
+        }
     }	
 }

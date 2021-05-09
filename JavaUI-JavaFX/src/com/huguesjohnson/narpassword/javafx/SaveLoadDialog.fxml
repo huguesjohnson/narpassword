@@ -41,8 +41,8 @@
 								<Insets top="0.0" right="0.0" bottom="0.0" left="4.0" />
 							</HBox.margin>
 						</TextField>
-						<Button mnemonicParsing="false" disable="false"
-							text="%button_browse" onAction="#onBrowse">
+						<Button fx:id="browseButton" mnemonicParsing="false"
+							disable="false" text="%button_browse" onAction="#onBrowse">
 							<graphic>
 								<ImageView fitHeight="16.0" fitWidth="16.0"
 									pickOnBounds="true" preserveRatio="true">
@@ -87,9 +87,9 @@
 						<Insets top="4.0" right="4.0" bottom="0.0" left="4.0" />
 					</padding>
 					<children>
-						<Label fx:id="labelConfirmPassword" prefWidth="180.0" text="%label_confirmpassword"
-							style="-fx-font-family: 'Ubuntu';" alignment="BASELINE_RIGHT"
-							HBox.hgrow="NEVER">
+						<Label fx:id="labelConfirmPassword" prefWidth="180.0"
+							text="%label_confirmpassword" style="-fx-font-family: 'Ubuntu';"
+							alignment="BASELINE_RIGHT" HBox.hgrow="NEVER">
 							<HBox.margin>
 								<Insets top="0.0" right="0.0" bottom="0.0" left="0.0" />
 							</HBox.margin>
@@ -126,7 +126,7 @@
 					</padding>
 					<children>
 						<ToolBar style="-fx-background-color: transparent;">
-							<Button mnemonicParsing="false"
+							<Button fx:id="cancelButton" mnemonicParsing="false"
 								style="-fx-font-family: 'Ubuntu';" text="%button_cancel"
 								disable="false" onAction="#onCancel">
 								<graphic>

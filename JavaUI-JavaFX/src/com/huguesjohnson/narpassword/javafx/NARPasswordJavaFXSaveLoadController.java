@@ -1,3 +1,26 @@
+/*
+NARPassword for Java - Application to generate a non-random password
+Copyright (C) 2011-2021 Hugues Johnson
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 package com.huguesjohnson.narpassword.javafx;
 
 import java.io.File;
@@ -35,7 +58,7 @@ import javafx.stage.Stage;
 public class NARPasswordJavaFXSaveLoadController implements Initializable{
 	private ResourceBundle bundle;
 	private String savePath;
-	private boolean cancel=false;
+	private boolean cancel=true;
 	private List<PasswordSetting> passwordSettingList;
     @FXML private TextField fieldSavePath;
     @FXML private PasswordField fieldSavePassword;
@@ -43,6 +66,8 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
     @FXML private Label labelSaveLoadError;
     @FXML private Label labelConfirmPassword;
     @FXML private Button saveLoadButton;
+    @FXML private Button browseButton;
+    @FXML private Button cancelButton;
     @FXML private String settingsJson;
     public enum SaveDialogMode{SAVE,LOAD};
     private SaveDialogMode mode;
@@ -50,6 +75,8 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
 	@Override
 	public void initialize(URL url,ResourceBundle bundle){
 		this.bundle=bundle;
+		util.drawButtonImageIfNotLoadedFromFXML(this.browseButton,"open.png",NARPasswordJavaFXSaveLoadController.class);
+		util.drawButtonImageIfNotLoadedFromFXML(this.cancelButton,"cancel.png",NARPasswordJavaFXSaveLoadController.class);
 	}
 
 	public boolean getCancel(){return(this.cancel);}
@@ -58,7 +85,15 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
 
 	public void setPasswordSettingList(List<PasswordSetting> passwordSettingList){this.passwordSettingList=passwordSettingList;}
 	
-	public void setSavePath(String savePath){this.savePath=savePath;}
+	public void setSavePath(String savePath){
+		this.savePath=savePath;
+		this.fieldSavePath.setText(savePath);
+		if(savePath!=null){
+			if((new File(savePath)).exists()){
+				this.saveLoadButton.setDisable(false);
+			}
+		}
+	}
 
 	public String getSavePath(){return(this.savePath);}
 
@@ -125,6 +160,7 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
 				writer.write(encryptedString);
 				writer.flush();
 				writer.close();
+				this.cancel=false;
 				this.closeWindow(event);
 			}
 			catch(Exception x){
@@ -144,6 +180,7 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
     				Type listType=new TypeToken<ArrayList<PasswordSetting>>(){}.getType();
     				this.passwordSettingList=new Gson().fromJson(json,listType);
     				this.passwordSettingList.sort(new PasswordSettingComparator());
+    				this.cancel=false;
     				this.closeWindow(event);
         		}
     			catch(Exception x){

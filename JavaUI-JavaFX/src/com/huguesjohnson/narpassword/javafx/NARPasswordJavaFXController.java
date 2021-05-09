@@ -24,6 +24,7 @@ SOFTWARE.
 package com.huguesjohnson.narpassword.javafx;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import com.huguesjohnson.narpas.Narpas;
@@ -44,6 +45,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
@@ -60,9 +62,9 @@ import javafx.util.Duration;
 
 public class NARPasswordJavaFXController implements Initializable{
 	private ResourceBundle bundle;
-	private boolean passwordChanged=false;
     private int lastSelectionIndex;
     private boolean isRemoving=false;
+    private boolean isAdding=false;
     private boolean passwordInClipboard=false;
     private long lastClipboardClear=0;
     private long lastPassPhraseClear=0;
@@ -116,7 +118,6 @@ public class NARPasswordJavaFXController implements Initializable{
         //also not sure how to do this in mapping in fxml
         this.sliderPasswordLength.valueProperty().addListener(new ChangeListener<Number>(){
             public void changed(ObservableValue<? extends Number> ov,Number old_val,Number new_val){
-            	passwordChanged=true;
                 sliderPasswordLength.setTooltip(new Tooltip(new_val.toString()));
                 generatePassword();
             }
@@ -130,6 +131,18 @@ public class NARPasswordJavaFXController implements Initializable{
         timeline.play();
         //disable fields by default
         this.enableDisableFields(false);
+        //fix images if they didn't load correctly - this is a CHRONIC problem that I could rant about at great lengths
+        util.drawButtonImageIfNotLoadedFromFXML(this.listAddButton,"add.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.openButton,"open.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.saveButton,"save.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.listRemoveButton,"remove.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.clearPassphraseButton,"clear.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.clearPasswordButton,"clear.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.copyButton,"copy.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.editPasswordButton,"edit.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.savePasswordButton,"save.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.addPasswordButton,"add.png",NARPasswordJavaFXController.class);
+        util.drawButtonImageIfNotLoadedFromFXML(this.undoPasswordButton,"undo.png",NARPasswordJavaFXController.class);
 	}
 	
 	//event for the open button on the password list
@@ -144,7 +157,7 @@ public class NARPasswordJavaFXController implements Initializable{
     	this.showSaveLoadDialog(NARPasswordJavaFXSaveLoadController.SaveDialogMode.SAVE);
     }
     
-    private void showSaveLoadDialog(NARPasswordJavaFXSaveLoadController.SaveDialogMode mode){
+    public void showSaveLoadDialog(NARPasswordJavaFXSaveLoadController.SaveDialogMode mode){
     	boolean save=(mode==NARPasswordJavaFXSaveLoadController.SaveDialogMode.SAVE);
     	try{
     		Stage dialog=new Stage();
@@ -172,6 +185,9 @@ public class NARPasswordJavaFXController implements Initializable{
     			passwordList.getSelectionModel().select(0);
     			passwordList.getFocusModel().focus(0);
     			updateFormFields(passwordList.getItems().get(0));
+    			this.savePath=controller.getSavePath();
+    		}else if(save&&!controller.getCancel()){
+    			this.savePath=controller.getSavePath();
     		}
     	}catch(Exception x){
     		this.showErrorAlert(x);
@@ -190,6 +206,7 @@ public class NARPasswordJavaFXController implements Initializable{
     	this.passwordList.getItems().add(newPassword);
     	this.passwordList.getSelectionModel().select(this.passwordList.getItems().size()-1);
     	this.listRemoveButton.setDisable(false);
+    	this.onEditPasswordSettings(event);
     }
 
 	//event for the remove button on the password list
@@ -230,8 +247,11 @@ public class NARPasswordJavaFXController implements Initializable{
     //event for the add button in the password settings section
     @FXML
     private void onAddPasswordSettings(ActionEvent event){
+    	this.isAdding=true;
     	this.passwordList.getItems().add(this.getPasswordSettings());
+    	this.passwordList.getSelectionModel().select(this.passwordList.getItems().size()-1);
     	this.enableDisableFields(false);
+    	this.isAdding=false;
     }
     
     //event for the undo button in the password settings section
@@ -282,7 +302,6 @@ public class NARPasswordJavaFXController implements Initializable{
     //event that fires when a key is pressed in the password name textfield
     @FXML
     private void onPasswordNameChange(KeyEvent event){
-    	this.passwordChanged=true;
     	this.generatePassword();
     	this.checkAddNew();
     }
@@ -290,7 +309,6 @@ public class NARPasswordJavaFXController implements Initializable{
     //event that fires when any of the "Use xxxx" checkboxes are checked/unchecked
     @FXML
     private void onPasswordSettingsCheckbox(ActionEvent event){
-    	this.passwordChanged=true;
     	this.generatePassword();
     	this.checkAddNew();
     }
@@ -298,7 +316,6 @@ public class NARPasswordJavaFXController implements Initializable{
     //event that fires when a key is pressed in the password name textfield
     @FXML
     private void onPasswordNotesChange(KeyEvent event){
-    	this.passwordChanged=true;
     	this.checkAddNew();
     }
     
@@ -378,11 +395,48 @@ public class NARPasswordJavaFXController implements Initializable{
 
     //handle selection changes in the password list
     private void passwordListSelectionChanged(ObservableValue<? extends PasswordSetting> observable,PasswordSetting oldValue,PasswordSetting newValue){
-        int currentSelectionIndex=this.passwordList.getSelectionModel().getSelectedIndex();
+    	int currentSelectionIndex=this.passwordList.getSelectionModel().getSelectedIndex();
         if(currentSelectionIndex==this.lastSelectionIndex){
         	return;                	
         }
-        //TODO - if I want to prompt to save unsaved changes this is the place to do it
+        //check for unsaved changes
+        if((this.lastSelectionIndex>=0)&&(this.lastSelectionIndex<this.passwordList.getItems().size())){
+            PasswordSetting psSelected=this.passwordList.getItems().get(this.lastSelectionIndex);
+            if((psSelected!=null)&&(!this.isAdding)&&(!this.isRemoving)){
+                PasswordSetting psNew=this.getPasswordSettings();
+                if(
+               		(!psSelected.getPasswordName().equals(psNew.getPasswordName()))||
+               		(!psSelected.getPasswordNotes().equals(psNew.getPasswordNotes()))||
+               		(psSelected.isOptionUseLCase()!=psNew.isOptionUseLCase())||
+               		(psSelected.isOptionUseUCase()!=psNew.isOptionUseUCase())||
+               		(psSelected.isOptionUseSChars()!=psNew.isOptionUseSChars())||
+               		(psSelected.isOptionUseNumbers()!=psNew.isOptionUseNumbers())||
+               		(psSelected.getPasswordLength()!=psNew.getPasswordLength())
+               	){
+                	//password has changed - prompt to save
+               		Alert a=new Alert(
+               				AlertType.CONFIRMATION,
+               				this.bundle.getString("label_savechanges")+psNew.getPasswordName()+"?",
+               				ButtonType.NO,
+               				ButtonType.YES);
+               		a.setTitle(this.bundle.getString("title_save_prompt"));
+               		Optional<ButtonType> result=a.showAndWait();
+                	//<sarcasm>using Optional.isPresent() is so much better than checking if result!=null</sarcasm>
+               		if(result.isPresent()){
+               			if(result.get().equals(ButtonType.YES)){
+                          	 /* Seriously, please give me a single logical argument why this Optional dance is better than:
+                         	  if((result!=null)&&(result.equals(ButtonType.YES)){
+                         	    do stuff
+                         	  }
+                         	  * This is literally more efficient and 100x easier to read
+                         	  * This is a totally unnecessary use of Optional to try and look cool in front of the functional programming people
+                         	  * */
+               				this.passwordList.getItems().set(this.lastSelectionIndex,psNew);
+               			}
+               		}
+               	 }
+            }
+        }
         //update stuff and deal with annoying lose focus behavior
         if(currentSelectionIndex>-1){
         	this.lastSelectionIndex=currentSelectionIndex;
@@ -395,7 +449,6 @@ public class NARPasswordJavaFXController implements Initializable{
         //now update the form fields
         this.updateFormFields(newValue);
         this.enableDisableFields(false);
-        this.passwordChanged=false;
     }
 
     //update all the password setting fields in the right pane
@@ -459,7 +512,7 @@ public class NARPasswordJavaFXController implements Initializable{
     		this.savePasswordButton.setDisable(true);
     	}else{
     		this.addPasswordButton.setDisable(false);
-    		this.savePasswordButton.setDisable(true);
+    		this.savePasswordButton.setDisable(false);
     	}
     }
     
