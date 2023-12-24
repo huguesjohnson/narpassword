@@ -21,8 +21,10 @@ There are a couple different things in this repository:
 The JavaFX version is the only one being actively maintained at the moment. This is simply because I think JavaFX is a fun way to write UIs quickly. The JavaFX version also has a (very) crude set of features to save password settings that's not in the other versions. The JavaFX version also intentionally uses a code style designed to annoy people who comment on Java development sites.
 
 In general the UI code is not well organized and is almost as ugly as the UI itself. I'm very bad at UI development but will try to at least make the JavaFX version less awful.
+
+The Java versions are dependent on https://github.com/huguesjohnson/DubbelLib - which will be bundled into releases. If you're planning to build from source though then you know what you need to do.
  
 **Links**
 
-Project page - http://www.huguesjohnson.com/rc89/
+Project page - https://huguesjohnson.com/narpassword/
 
