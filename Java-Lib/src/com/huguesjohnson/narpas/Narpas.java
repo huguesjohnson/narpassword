@@ -1,32 +1,14 @@
-/*
-NARPassword for Java - Application to generate a non-random password
-Copyright (C) 2011-2020 Hugues Johnson
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* https://github.com/huguesjohnson/narpassword/blob/main/LICENSE */
 
 package com.huguesjohnson.narpas;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import com.huguesjohnson.dubbel.util.ChecksumUtils;
 
 public abstract class Narpas{
     
@@ -38,17 +20,17 @@ public abstract class Narpas{
         public static final String[] schars=new String[] { "!","@","#","$","%","^","&","*","-","=","+",":",";","?",",","." };
     }
 
-    private static int computeChecksum(String s)
+    public static int computeChecksum(String s)
     {
         byte[] b=s.getBytes();
-        int checksum=0;
-        for(int i=0;i<b.length;i++)
-        {
-            checksum=checksum^b[i];
-        }
-        return (checksum);
+        return(ChecksumUtils.xorBytes(b));
     }
 
+    /* 
+     * I can't recall why I implemented it this way.
+     * I think in real-life I was working on a project with concurrency issues and over-engineered this.
+     * The bracket style is like .NET so I think I know exactly which project it was now.
+     */
     static MessageDigest md5Hash=null;
     public static String computeHash(String input,int minLength)
     {
@@ -82,15 +64,52 @@ public abstract class Narpas{
         return(sBuilder.toString());
     }
 
+    public static String computeHashSHA3512(String input) throws NoSuchAlgorithmException{
+    	MessageDigest md=MessageDigest.getInstance("SHA3-512");
+        byte[] data=md.digest(input.getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb=new StringBuilder();
+        for(int i=0;i<data.length;i++){
+        	int di=data[i]&0xff;
+        	if(di<16){sb.append("0");} 
+        	sb.append(Integer.toHexString(di));
+        }
+        return(sb.toString());
+    }
+    
     private static int pickIndex(int i,int max)
     {
         if(i>=max)
         {
             i=i-((int)Math.floor(i/max)*max);
         }
-        return (i);
+        return(i);
+    }
+    
+    public static byte[] xorBytes(byte[] a,byte[] b) throws Exception{
+    	int l=a.length;
+    	if(l!=b.length){throw(new Exception("Arrays are different lengths. a.length="+l+"b.length="+b.length));};
+		byte[] xor=new byte[l];
+		for(int i=0;i<l;i++){
+			xor[i]=(byte)((int)a[i]^(int)b[i]);
+		}
+		return(xor);
     }
 
+    public static String generatePassword(String passPhrase,PasswordSetting settings){
+    	if(settings.getVersion()<=1){
+    		return(generatePassword(
+    				passPhrase,
+    				settings.getPasswordName(),
+    				settings.isOptionUseLCase(),
+    				settings.isOptionUseUCase(),
+    				settings.isOptionUseNumbers(),
+    				settings.isOptionUseSChars(),
+    				settings.getPasswordLength()));
+    	}
+    	return("");
+    }
+    
+    //original (v1) algorithm
     public static String generatePassword(String passPhrase,String passwordName,boolean useLCase,boolean useUCase,boolean useNumbers,boolean useSpecialCharacters,int basePasswordLength)
     {
         //validations
@@ -115,11 +134,12 @@ public abstract class Narpas{
         String nameHash=computeHash(passwordName,passwordLength);
         byte[] nameBytes=nameHash.getBytes();
 
+        byte[] xorBytes=null;
         //compute array order
-        byte[] xorBytes=new byte[phraseBytes.length];
-        for(int i=0;i<phraseBytes.length;i++)
-        {
-            xorBytes[i]=(byte)((int)phraseBytes[i]^(int)nameBytes[i]);
+        try{
+        	xorBytes=xorBytes(phraseBytes,nameBytes);
+        }catch(Exception x){
+        	return("");
         }
 
         //compute checksums which translate to starting points in hashCodes

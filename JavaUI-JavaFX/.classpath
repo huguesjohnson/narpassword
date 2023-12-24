@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/NARPassword-JavaLib"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="module" value="true"/>
@@ -9,5 +8,7 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="/NARPassword-JavaLib/lib/gson-2.8.5.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JavaFX"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NARPassword-JavaLib"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DubbelLibJava"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

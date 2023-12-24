@@ -1,25 +1,4 @@
-/*
-NARPassword for Java - Application to generate a non-random password
-Copyright (C) 2011-2021 Hugues Johnson
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* https://github.com/huguesjohnson/narpassword/blob/main/LICENSE */
 
 package com.huguesjohnson.narpassword.javafx;
 
@@ -35,6 +14,7 @@ import java.util.ResourceBundle;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.huguesjohnson.dubbel.fx.ImageUtil;
 import com.huguesjohnson.narpas.PasswordSetting;
 import com.huguesjohnson.narpas.PasswordSettingComparator;
 import com.huguesjohnson.narpas.StringEncryptDecrypt;
@@ -75,8 +55,8 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
 	@Override
 	public void initialize(URL url,ResourceBundle bundle){
 		this.bundle=bundle;
-		util.drawButtonImageIfNotLoadedFromFXML(this.browseButton,"open.png",NARPasswordJavaFXSaveLoadController.class);
-		util.drawButtonImageIfNotLoadedFromFXML(this.cancelButton,"cancel.png",NARPasswordJavaFXSaveLoadController.class);
+		ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.browseButton,"open.png",NARPasswordJavaFXSaveLoadController.class);
+		ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.cancelButton,"cancel.png",NARPasswordJavaFXSaveLoadController.class);
 	}
 
 	public boolean getCancel(){return(this.cancel);}
