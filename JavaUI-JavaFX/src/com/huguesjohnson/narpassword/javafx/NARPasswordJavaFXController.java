@@ -194,10 +194,12 @@ public class NARPasswordJavaFXController implements Initializable{
     private void onRemove(ActionEvent event){
     	//sanity checks
     	if(this.passwordList.getItems().size()<1){
+        	this.listRemoveButton.setDisable(true);
     		return;
     	}
     	int currentSelection=this.passwordList.getSelectionModel().getSelectedIndex();
     	if(currentSelection<0){
+        	this.listRemoveButton.setDisable(true);
     		return;
     	}
     	this.isRemoving=true;
@@ -424,11 +426,13 @@ public class NARPasswordJavaFXController implements Initializable{
         	//this is to deal with the selected index changing when focus is lost
         	if(this.passwordList.getItems().size()<0){
         		this.lastSelectionIndex=-1;
+            	this.listRemoveButton.setDisable(true);
         	}           	
         }
         //now update the form fields
         this.updateFormFields(newValue);
         this.enableDisableFields(false);
+    	this.listRemoveButton.setDisable(false);
     }
 
     //update all the password setting fields in the right pane
