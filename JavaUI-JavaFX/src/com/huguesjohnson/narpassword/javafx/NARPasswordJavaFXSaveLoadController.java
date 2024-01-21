@@ -16,7 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.huguesjohnson.dubbel.fx.ImageUtil;
 import com.huguesjohnson.narpas.PasswordSetting;
-import com.huguesjohnson.narpas.PasswordSettingComparator;
+import com.huguesjohnson.narpas.PasswordSettingNameComparator;
 import com.huguesjohnson.narpas.StringEncryptDecrypt;
 
 import javafx.event.ActionEvent;
@@ -159,7 +159,7 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
     				String json=StringEncryptDecrypt.decryptString(fieldSavePassword.getText(),encryptedString);
     				Type listType=new TypeToken<ArrayList<PasswordSetting>>(){}.getType();
     				this.passwordSettingList=new Gson().fromJson(json,listType);
-    				this.passwordSettingList.sort(new PasswordSettingComparator());
+    				this.passwordSettingList.sort(new PasswordSettingNameComparator());
     				this.cancel=false;
     				this.closeWindow(event);
         		}

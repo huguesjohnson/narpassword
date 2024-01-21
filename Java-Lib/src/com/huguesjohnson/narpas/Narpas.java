@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.huguesjohnson.dubbel.util.ChecksumUtils;
+import com.huguesjohnson.dubbel.util.ChecksumUtil;
 
 public abstract class Narpas{
     
@@ -23,7 +23,7 @@ public abstract class Narpas{
     public static int computeChecksum(String s)
     {
         byte[] b=s.getBytes();
-        return(ChecksumUtils.xorBytes(b));
+        return(ChecksumUtil.xorBytes(b));
     }
 
     /* 
