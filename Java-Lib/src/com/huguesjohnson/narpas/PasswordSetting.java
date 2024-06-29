@@ -2,29 +2,28 @@
 
 package com.huguesjohnson.narpas;
 
-import java.io.Serializable;
-import java.util.Date;
-
-import com.huguesjohnson.dubbel.util.DateUtil;
-
-public class PasswordSetting implements Serializable{
-	private static final long serialVersionUID=666;
+public class PasswordSetting{
 	private String passwordName;
 	private boolean optionUseLCase;
 	private boolean optionUseUCase;
 	private boolean optionUseNumbers;
 	private boolean optionUseSChars;
+	private boolean optionUseExtChars;
+	private boolean optionAllowDuplicateCharacters;
 	private int	passwordLength;
 	private String passwordNotes;
 	private String category;
-	private int version=1;
-	private String[] limitSpecialChars=null;
-	private Date lastUsed;
+	private int algorithmVersion=1;
+	private String passwordVersion="";
+	private char[] limitSpecialChars=null;
+	private long lastUsed;
+	//advanced settings
+	private double[] weights={1.0d,1.0d,1.0d,1.0d,1.0d};
 	
-	/** 
+	/* 
 	 * Comparators should really be used for UI sorting.
-	 * These next two exist for ArrayList.contains().
-	 * That uses equals(), can't recall why I added hashCode().
+	 * These next two exist for ArrayList.contains() and JavaFX ListView.
+	 * They both use equals(), can't recall why I added hashCode().
 	 */
 
 	@Override
@@ -35,6 +34,12 @@ public class PasswordSetting implements Serializable{
 
 	@Override
 	public boolean equals(Object obj){
+		/*
+		 * This only compares password names because it is used for ArrayList.contains();
+		 * In hindsight, a Map<String,PasswordSetting> would have been more sensible.
+		 * Wait, the main UI goes into a ListView with the same issue.
+		 * Fine, let's leave it with just comparing the password name.
+		 */
 		if(this==obj){return(true);};
 		if(obj==null){return(false);};
 		if(getClass()!=obj.getClass()){return(false);}
@@ -45,8 +50,83 @@ public class PasswordSetting implements Serializable{
 	
 	/* default constructor */
 	
-	private PasswordSetting(){
-		this.lastUsed=DateUtil.now();
+	public PasswordSetting(){
+		this.lastUsed=System.currentTimeMillis();
+	}
+	
+	/* manage weights (advanced setting) */
+	
+	public double getWeight(CharacterSetArrayIndex characterSet){
+		return(this.weights[characterSet.getValue()]);
+	}
+	
+	public void setWeight(CharacterSetArrayIndex characterSet,double weight){
+		this.weights[characterSet.getValue()]=weight;
+	}
+	
+	/* 
+	 * Used to tell if a password has changed despite the method name.
+	 * I suppose could be used for other things too.
+	 * Who knows, maybe I will find another use later.
+	 * This compares everything except lastUsed.
+	 */
+	
+	public boolean compare(PasswordSetting setting){
+		if(setting==null){return(false);}
+		//booleans
+		if(this.optionAllowDuplicateCharacters!=setting.isOptionAllowDuplicateCharacters()){return(false);}
+		if(this.optionUseLCase!=setting.isOptionUseLCase()){return(false);}
+		if(this.optionUseUCase!=setting.isOptionUseUCase()){return(false);}
+		if(this.optionUseNumbers!=setting.isOptionUseNumbers()){return(false);}
+		if(this.optionUseSChars!=setting.isOptionUseSChars()){return(false);}
+		if(this.optionUseExtChars!=setting.isOptionUseExtChars()){return(false);}
+		//ints
+		if(this.passwordLength!=setting.getPasswordLength()){return(false);}
+		if(this.algorithmVersion!=setting.getAlgorithmVersion()){return(false);}
+		//weights
+		if(this.getWeight(CharacterSetArrayIndex.LCHARS)!=setting.getWeight(CharacterSetArrayIndex.LCHARS)){return(false);}
+		if(this.getWeight(CharacterSetArrayIndex.UCHARS)!=setting.getWeight(CharacterSetArrayIndex.UCHARS)){return(false);}
+		if(this.getWeight(CharacterSetArrayIndex.NUMS)!=setting.getWeight(CharacterSetArrayIndex.NUMS)){return(false);}
+		if(this.getWeight(CharacterSetArrayIndex.SCHARS)!=setting.getWeight(CharacterSetArrayIndex.SCHARS)){return(false);}
+		if(this.getWeight(CharacterSetArrayIndex.EXTCHARS)!=setting.getWeight(CharacterSetArrayIndex.EXTCHARS)){return(false);}
+		//strings
+		String s=setting.getPasswordName();
+		if(this.passwordName==null){
+			if(s!=null){return(false);}
+		}else{//this.passwordName!=null
+			if(!this.passwordName.equals(s)){return(false);}
+		}
+		s=setting.getPasswordNotes();
+		if(this.passwordNotes==null){
+			if(s!=null){return(false);}
+		}else{//this.passwordNotes!=null
+			if(!this.passwordNotes.equals(s)){return(false);}
+		}
+		s=setting.getPasswordVersion();
+		if(this.passwordVersion==null){
+			if(s!=null){return(false);}
+		}else{//this.passwordVersion!=null
+			if(!this.passwordVersion.equals(s)){return(false);}
+		}
+		s=setting.getCategory();
+		if(this.category==null){
+			if(s!=null){return(false);}
+		}else{//this.category!=null
+			if(!this.category.equals(s)){return(false);}
+		}
+		//limit special characters
+		char[] lsc=setting.getLimitSpecialChars();
+        if(this.limitSpecialChars==null){
+        	if(lsc!=null){return(false);}
+        }else{//this.limitSpecialChars!=null
+        	if(lsc==null){return(false);}
+	        int length=this.limitSpecialChars.length;
+	        if(length!=lsc.length){return(false);}
+	        for(int i=0;i<length;i++){
+	        	if(this.limitSpecialChars[i]!=lsc[i]){return(false);}
+	        }
+        }
+		return(true);
 	}
 	
 	/* autogenerated code below */
@@ -87,6 +167,22 @@ public class PasswordSetting implements Serializable{
 	public void setOptionUseSChars(boolean optionUseSChars) {
 		this.optionUseSChars = optionUseSChars;
 	}
+	public boolean isOptionUseExtChars() {
+		return optionUseExtChars;
+	}
+
+	public void setOptionUseExtChars(boolean optionUseExtChars) {
+		this.optionUseExtChars = optionUseExtChars;
+	}
+
+	public boolean isOptionAllowDuplicateCharacters() {
+		return optionAllowDuplicateCharacters;
+	}
+
+	public void setOptionAllowDuplicateCharacters(boolean optionAllowDuplicateCharacters) {
+		this.optionAllowDuplicateCharacters = optionAllowDuplicateCharacters;
+	}
+
 	public int getPasswordLength() {
 		return passwordLength;
 	}
@@ -108,44 +204,48 @@ public class PasswordSetting implements Serializable{
 		this.category = category;
 	}
 
-	public int getVersion() {
-		return version;
+	public int getAlgorithmVersion() {
+		return algorithmVersion;
 	}
 
-	public void setVersion(int version) {
-		this.version = version;
+	public void setAlgorithmVersion(int algorithmVersion) {
+		this.algorithmVersion = algorithmVersion;
 	}
 
-	public String[] getLimitSpecialChars() {
+	public char[] getLimitSpecialChars() {
 		return limitSpecialChars;
 	}
 
-	public void setLimitSpecialChars(String[] limitSpecialChars) {
+	public void setLimitSpecialChars(char[] limitSpecialChars) {
 		this.limitSpecialChars = limitSpecialChars;
 	}
 
-	public Date getLastUsed() {
+	public long getLastUsed() {
 		return lastUsed;
 	}
 
-	public void setLastUsed(Date lastUsed) {
+	public void setLastUsed(long lastUsed) {
 		this.lastUsed = lastUsed;
 	}	
-	
+
+
 	public PasswordSetting(String passwordName, boolean optionUseLCase, boolean optionUseUCase,
-			boolean optionUseNumbers, boolean optionUseSChars, int passwordLength, String passwordNotes,
-			String category, int version, String[] limitSpecialChars) {
-		this();
+			boolean optionUseNumbers, boolean optionUseSChars, boolean optionUseExtChars, int passwordLength, String passwordNotes,
+			String category, int algorithmVersion, String passwordVersion, char[] limitSpecialChars, long lastUsed) {
+		super();
 		this.passwordName = passwordName;
 		this.optionUseLCase = optionUseLCase;
 		this.optionUseUCase = optionUseUCase;
 		this.optionUseNumbers = optionUseNumbers;
 		this.optionUseSChars = optionUseSChars;
+		this.optionUseExtChars = optionUseExtChars;
 		this.passwordLength = passwordLength;
 		this.passwordNotes = passwordNotes;
 		this.category = category;
-		this.version = version;
+		this.algorithmVersion = algorithmVersion;
+		this.passwordVersion = passwordVersion;
 		this.limitSpecialChars = limitSpecialChars;
+		this.lastUsed = lastUsed;
 	}
 
 	public PasswordSetting(String passwordName, boolean optionUseLCase, boolean optionUseUCase,
@@ -169,5 +269,13 @@ public class PasswordSetting implements Serializable{
 		this.optionUseNumbers = optionUseNumbers;
 		this.optionUseSChars = optionUseSChars;
 		this.passwordLength = passwordLength;
+	}
+
+	public String getPasswordVersion() {
+		return passwordVersion;
+	}
+
+	public void setPasswordVersion(String passwordVersion) {
+		this.passwordVersion = passwordVersion;
 	}
 }
