@@ -5,6 +5,8 @@ package com.huguesjohnson.narpas;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.huguesjohnson.dubbel.util.StringComparator;
+
 /* 
  * ...because there's nothing I enjoy more than static single-purpose utility functions
  * These are things that aren't used for password generation.
@@ -23,6 +25,7 @@ public abstract class NarpasUtil{
 				categories.add(c);
 			}
 		}
+		categories.sort(new StringComparator());
 		return(categories);
 	}
 }

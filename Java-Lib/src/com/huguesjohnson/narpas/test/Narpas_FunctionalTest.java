@@ -16,6 +16,8 @@ import com.huguesjohnson.narpas.CharacterSetArrayIndex;
 import com.huguesjohnson.narpas.Narpas;
 import com.huguesjohnson.narpas.NarpasUtil;
 import com.huguesjohnson.narpas.PasswordSetting;
+import com.huguesjohnson.narpas.PasswordSettingDateComparator;
+import com.huguesjohnson.narpas.PasswordSettingNameComparator;
 import com.huguesjohnson.narpas.StringEncryptDecrypt;
 
 import junit.framework.TestCase;
@@ -1608,37 +1610,177 @@ public class Narpas_FunctionalTest extends TestCase{
 		ArrayList<PasswordSetting> list=new ArrayList<PasswordSetting>();
 		PasswordSetting ps=new PasswordSetting();
 		ps.setPasswordName("name1");
-		ps.setCategory("category1");
+		ps.setCategory("q_category");
 		list.add(ps);
 		ps=new PasswordSetting();
 		ps.setPasswordName("name2");
-		ps.setCategory("category2");
+		ps.setCategory("w_category");
 		list.add(ps);
 		ps=new PasswordSetting();
 		ps.setPasswordName("name3");
-		ps.setCategory("category3");
+		ps.setCategory("e_category");
 		list.add(ps);
 		ps=new PasswordSetting();
 		ps.setPasswordName("name4");
-		ps.setCategory("category4");
+		ps.setCategory("r_category");
 		list.add(ps);
 		List<String> categories=NarpasUtil.getAllCategories(list);
 		assertEquals(4,categories.size());
-		assertTrue(categories.contains("category1"));
-		assertTrue(categories.contains("category2"));
-		assertTrue(categories.contains("category3"));
-		assertTrue(categories.contains("category4"));
+		assertEquals(categories.get(0),"e_category");
+		assertEquals(categories.get(1),"q_category");
+		assertEquals(categories.get(2),"r_category");
+		assertEquals(categories.get(3),"w_category");
 		ps=new PasswordSetting();
 		ps.setPasswordName("name5");
 		ps.setCategory(null);
 		list.add(ps);
 		categories=NarpasUtil.getAllCategories(list);
 		assertEquals(5,categories.size());
-		assertTrue(categories.contains("category1"));
-		assertTrue(categories.contains("category2"));
-		assertTrue(categories.contains("category3"));
-		assertTrue(categories.contains("category4"));
-		assertTrue(categories.contains(NarpasUtil.DEFAULT_NO_CATEGORY));
+		assertEquals(categories.get(0),NarpasUtil.DEFAULT_NO_CATEGORY);
+		assertEquals(categories.get(1),"e_category");
+		assertEquals(categories.get(2),"q_category");
+		assertEquals(categories.get(3),"r_category");
+		assertEquals(categories.get(4),"w_category");
 	}
 	
+	@Test
+	public void test_PasswordSettingDateComparator(){
+		ArrayList<PasswordSetting> list=new ArrayList<PasswordSetting>();
+		//add some password settings
+		PasswordSetting ps=new PasswordSetting();
+		ps.setPasswordName("password_6");
+		ps.setLastUsed(6);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_4");
+		ps.setLastUsed(4);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_89");
+		ps.setLastUsed(89);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_6489");
+		ps.setLastUsed(6489);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_4689");
+		ps.setLastUsed(4689);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_666");
+		ps.setLastUsed(666);
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("password_13");
+		ps.setLastUsed(13);
+		list.add(ps);
+		//sort
+		list.sort(new PasswordSettingDateComparator(false));
+		//expected order=6489, 4689, 666, 89, 13, 6, 4
+		ps=list.get(0);
+		assertEquals(ps.getPasswordName(),"password_6489");
+		assertEquals(ps.getLastUsed(),6489);
+		ps=list.get(1);
+		assertEquals(ps.getPasswordName(),"password_4689");
+		assertEquals(ps.getLastUsed(),4689);
+		ps=list.get(2);
+		assertEquals(ps.getPasswordName(),"password_666");
+		assertEquals(ps.getLastUsed(),666);
+		ps=list.get(3);
+		assertEquals(ps.getPasswordName(),"password_89");
+		assertEquals(ps.getLastUsed(),89);
+		ps=list.get(4);
+		assertEquals(ps.getPasswordName(),"password_13");
+		assertEquals(ps.getLastUsed(),13);
+		ps=list.get(5);
+		assertEquals(ps.getPasswordName(),"password_6");
+		assertEquals(ps.getLastUsed(),6);
+		ps=list.get(6);
+		assertEquals(ps.getPasswordName(),"password_4");
+		assertEquals(ps.getLastUsed(),4);
+		//reverse sort
+		list.sort(new PasswordSettingDateComparator(true));
+		ps=list.get(6);
+		assertEquals(ps.getPasswordName(),"password_6489");
+		assertEquals(ps.getLastUsed(),6489);
+		ps=list.get(5);
+		assertEquals(ps.getPasswordName(),"password_4689");
+		assertEquals(ps.getLastUsed(),4689);
+		ps=list.get(4);
+		assertEquals(ps.getPasswordName(),"password_666");
+		assertEquals(ps.getLastUsed(),666);
+		ps=list.get(3);
+		assertEquals(ps.getPasswordName(),"password_89");
+		assertEquals(ps.getLastUsed(),89);
+		ps=list.get(2);
+		assertEquals(ps.getPasswordName(),"password_13");
+		assertEquals(ps.getLastUsed(),13);
+		ps=list.get(1);
+		assertEquals(ps.getPasswordName(),"password_6");
+		assertEquals(ps.getLastUsed(),6);
+		ps=list.get(0);
+		assertEquals(ps.getPasswordName(),"password_4");
+		assertEquals(ps.getLastUsed(),4);
+	}
+	
+	@Test
+	public void test_PasswordSettingNameComparator(){
+		ArrayList<PasswordSetting> list=new ArrayList<PasswordSetting>();
+		//add some password settings
+		PasswordSetting ps=new PasswordSetting();
+		ps.setPasswordName("qassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("wassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("eassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("rassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("tassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("yassword");
+		list.add(ps);
+		ps=new PasswordSetting();
+		ps.setPasswordName("uassword");
+		list.add(ps);
+		//sort
+		list.sort(new PasswordSettingNameComparator(false));
+		ps=list.get(0);
+		assertEquals(ps.getPasswordName(),"eassword");
+		ps=list.get(1);
+		assertEquals(ps.getPasswordName(),"qassword");
+		ps=list.get(2);
+		assertEquals(ps.getPasswordName(),"rassword");
+		ps=list.get(3);
+		assertEquals(ps.getPasswordName(),"tassword");
+		ps=list.get(4);
+		assertEquals(ps.getPasswordName(),"uassword");
+		ps=list.get(5);
+		assertEquals(ps.getPasswordName(),"wassword");
+		ps=list.get(6);
+		assertEquals(ps.getPasswordName(),"yassword");
+		//reverse sort
+		list.sort(new PasswordSettingNameComparator(true));
+		ps=list.get(6);
+		assertEquals(ps.getPasswordName(),"eassword");
+		ps=list.get(5);
+		assertEquals(ps.getPasswordName(),"qassword");
+		ps=list.get(4);
+		assertEquals(ps.getPasswordName(),"rassword");
+		ps=list.get(3);
+		assertEquals(ps.getPasswordName(),"tassword");
+		ps=list.get(2);
+		assertEquals(ps.getPasswordName(),"uassword");
+		ps=list.get(1);
+		assertEquals(ps.getPasswordName(),"wassword");
+		ps=list.get(0);
+		assertEquals(ps.getPasswordName(),"yassword");
+		
+	}
 }
