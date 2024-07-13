@@ -1781,6 +1781,5 @@ public class Narpas_FunctionalTest extends TestCase{
 		assertEquals(ps.getPasswordName(),"wassword");
 		ps=list.get(0);
 		assertEquals(ps.getPasswordName(),"yassword");
-		
 	}
 }

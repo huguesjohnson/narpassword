@@ -2,6 +2,8 @@
 
 package com.huguesjohnson.narpas;
 
+import java.util.UUID;
+
 public class PasswordSetting{
 	private String passwordName;
 	private boolean optionUseLCase;
@@ -17,6 +19,7 @@ public class PasswordSetting{
 	private String passwordVersion="";
 	private char[] limitSpecialChars=null;
 	private long lastUsed;
+	private String uuid; 
 	//advanced settings
 	private double[] weights={1.0d,1.0d,1.0d,1.0d,1.0d};
 	
@@ -35,23 +38,25 @@ public class PasswordSetting{
 	@Override
 	public boolean equals(Object obj){
 		/*
-		 * This only compares password names because it is used for ArrayList.contains();
+		 * This only compares uuid field because it is used for ArrayList.contains();
 		 * In hindsight, a Map<String,PasswordSetting> would have been more sensible.
 		 * Wait, the main UI goes into a ListView with the same issue.
-		 * Fine, let's leave it with just comparing the password name.
+		 * Fine, let's leave it with just comparing the uuid.
 		 */
 		if(this==obj){return(true);};
 		if(obj==null){return(false);};
-		if(getClass()!=obj.getClass()){return(false);}
+		if(obj.getClass()!=PasswordSetting.class){return(false);}
 		PasswordSetting compareToObj=(PasswordSetting)obj;
-		if((this.passwordName==null)||(compareToObj.passwordName==null)){return(false);}
-		return(this.getPasswordName().equals(compareToObj.getPasswordName()));
+		String uuid=compareToObj.getUuid();
+		if((this.uuid==null)||(uuid==null)){return(false);}
+		return(this.uuid.equals(uuid));
 	}
 	
 	/* default constructor */
 	
 	public PasswordSetting(){
 		this.lastUsed=System.currentTimeMillis();
+		this.uuid=UUID.randomUUID().toString();
 	}
 	
 	/* manage weights (advanced setting) */
@@ -232,7 +237,7 @@ public class PasswordSetting{
 	public PasswordSetting(String passwordName, boolean optionUseLCase, boolean optionUseUCase,
 			boolean optionUseNumbers, boolean optionUseSChars, boolean optionUseExtChars, int passwordLength, String passwordNotes,
 			String category, int algorithmVersion, String passwordVersion, char[] limitSpecialChars, long lastUsed) {
-		super();
+		this();
 		this.passwordName = passwordName;
 		this.optionUseLCase = optionUseLCase;
 		this.optionUseUCase = optionUseUCase;
@@ -277,5 +282,13 @@ public class PasswordSetting{
 
 	public void setPasswordVersion(String passwordVersion) {
 		this.passwordVersion = passwordVersion;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 }
