@@ -14,7 +14,7 @@ There are a couple different things in this repository:
 
 * Java library (no UI)
 * Java Swing UI - runs on anything that supports Swing
-* JavaFX UI - runs on anything that supports Java 11 + OpenJFX, only explicitly tested on Ubuntu and Windows
+* JavaFX UI - runs on anything that supports Java 11 + OpenJFX, only explicitly tested on Ubuntu
 * .NET UI - runs on Windows and Linux via Mono
 * Android UI - this mostly exists for me to learn how to build Android apps, it's built against a now old version of the SDK, I don't plan to release it on an app store
 
@@ -22,9 +22,11 @@ The JavaFX version is the only one being actively maintained at the moment. This
 
 In general the UI code is not well organized and is almost as ugly as the UI itself. I'm very bad at UI development but will try to at least make the JavaFX version less awful.
 
+Lately I've been making some changes to strengthen the generated passwords and improve the usability. I may even make this a web application instead of a client one. For now, these changes are only in the Java Library and JavaFX UI.
+
 The Java versions are dependent on https://github.com/huguesjohnson/DubbelLib - which will be bundled into releases. If you're planning to build from source though then you know what you need to do.
  
 **Links**
 
-Project page - https://huguesjohnson.com/narpassword/
+Project page with usage guide - https://huguesjohnson.com/narpassword/
 

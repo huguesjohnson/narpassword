@@ -3,12 +3,18 @@
 package com.huguesjohnson.narpassword.javafx;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
 import com.huguesjohnson.dubbel.fx.ImageUtil;
+import com.huguesjohnson.dubbel.util.DateUtil;
+import com.huguesjohnson.dubbel.util.StringComparator;
 import com.huguesjohnson.narpas.Narpas;
+import com.huguesjohnson.narpas.NarpasUtil;
 import com.huguesjohnson.narpas.PasswordSetting;
+import com.huguesjohnson.narpas.PasswordSettingDateComparator;
+import com.huguesjohnson.narpas.PasswordSettingNameComparator;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -16,6 +22,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -27,6 +34,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Slider;
@@ -45,12 +53,21 @@ public class NARPasswordJavaFXController implements Initializable{
     private int lastSelectionIndex;
     private boolean isRemoving=false;
     private boolean isAdding=false;
+    private boolean isSorting=false;
+    private boolean isEditing=false;
+    private boolean isFiltered=false;
     private boolean passwordInClipboard=false;
     private long lastClipboardClear=0;
     private long lastPassPhraseClear=0;
 	private String savePath;
 	public void setSavePath(String savePath){this.savePath=savePath;}
-    //main window - left pane
+	//sorting
+    public enum SortedBy{NAME,DATE};
+	private SortedBy sortedBy=SortedBy.NAME;
+	private boolean sortedReverse=false;
+	//the list of password settings
+	ObservableList<PasswordSetting> items=FXCollections.observableArrayList();
+	//main window - left pane
     @FXML private ListView<PasswordSetting> passwordList;
     @FXML private Button openButton;
     @FXML private Button saveButton;
@@ -58,16 +75,28 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML private Button listRemoveButton;
     @FXML private Button clearPassphraseButton;
     @FXML private Button clearPasswordButton;
+    @FXML private Button sortNameButton;
+    @FXML private Button sortLastUsedButton;
     //main window - right pane
     @FXML private PasswordField fieldPassPhrase;
     @FXML private TextField fieldPasswordName;
     @FXML private TextField fieldPasswordNotes;
     @FXML private TextField fieldPassword;
+    @FXML private TextField fieldPasswordVersion;
+    @FXML private TextField fieldLimitSpecialCharacters;
+    @FXML private TextField fieldLastUsed;
+    @FXML private TextField fieldUUID;
+    @FXML private ComboBox<String> fieldPasswordCategory;
+    @FXML private ComboBox<String> fieldCategoryFilter;
+    @FXML private ComboBox<String> fieldAlgorithmVersion;
     @FXML private Button copyButton;
     @FXML private CheckBox checkLowerCase;
     @FXML private CheckBox checkUpperCase;
     @FXML private CheckBox checkNumbers;
     @FXML private CheckBox checkSpecialCharacters;
+    @FXML private CheckBox checkExtendedCharacters;
+    @FXML private CheckBox checkDuplicateCharacters;
+    @FXML private CheckBox checkLimitSpecialCharacters;
     @FXML private CheckBox checkClearClipboard;
     @FXML private Slider sliderPasswordLength;
     @FXML private Button editPasswordButton;
@@ -81,11 +110,9 @@ public class NARPasswordJavaFXController implements Initializable{
 	@Override
 	public void initialize(URL url,ResourceBundle bundle){
 		this.bundle=bundle;
-		//setup password list
-        PasswordSetting defaultPassword=new PasswordSetting("<new password>",true,true,true,true,32,"");
-        this.passwordList.setEditable(false);
-        ObservableList<PasswordSetting> items=FXCollections.observableArrayList(defaultPassword);
-        this.passwordList.setItems(items);
+		//of all the workarounds you are forced to do in JavaFX, this might be the worst
+		this.fieldPasswordCategory.setMaxWidth(Double.MAX_VALUE);
+		this.fieldCategoryFilter.setMaxWidth(Double.MAX_VALUE);
         //not sure how to do this in mapping in fxml
         this.passwordList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PasswordSetting>(){
             @Override
@@ -93,8 +120,6 @@ public class NARPasswordJavaFXController implements Initializable{
             	passwordListSelectionChanged(observable,oldValue,newValue);
             }
         });
-        this.passwordList.getSelectionModel().select(0);
-        this.lastSelectionIndex=0;
         //also not sure how to do this in mapping in fxml
         this.sliderPasswordLength.valueProperty().addListener(new ChangeListener<Number>(){
             public void changed(ObservableValue<? extends Number> ov,Number old_val,Number new_val){
@@ -102,6 +127,21 @@ public class NARPasswordJavaFXController implements Initializable{
                 generatePassword();
             }
         });
+        //also not sure how to do this in fxml
+        this.fieldAlgorithmVersion.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue<? extends String> selected, String oldValue,String newValue){
+            	onAlgorithmVersionChanged();
+            }
+          });   
+        this.fieldCategoryFilter.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue<? extends String> selected, String oldValue,String newValue){
+            	onCategoryFilterChanged();
+            }
+          });
+		//setup password list
+        this.passwordList.setItems(this.items);
+        this.onAdd(null);
+        this.lastSelectionIndex=0;
         this.updateFormFields(this.passwordList.getSelectionModel().getSelectedItem());
         //setup timer - maybe this can also be done in fxml
         Timeline timeline=new Timeline(new KeyFrame(Duration.seconds(1),new EventHandler<ActionEvent>(){
@@ -109,6 +149,9 @@ public class NARPasswordJavaFXController implements Initializable{
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
+        //setup category filter
+		this.fieldCategoryFilter.getItems().add(NarpasUtil.DEFAULT_NO_CATEGORY);
+		this.fieldCategoryFilter.getItems().add(NarpasUtil.DEFAULT_ALL_CATEGORY);
         //disable fields by default
         this.enableDisableFields(false);
         //fix images if they didn't load correctly - this is a CHRONIC problem that I could rant about at great lengths
@@ -123,6 +166,37 @@ public class NARPasswordJavaFXController implements Initializable{
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.savePasswordButton,"save.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.addPasswordButton,"add.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.undoPasswordButton,"undo.png",NARPasswordJavaFXController.class);
+        ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.sortLastUsedButton,"sortlastused.png",NARPasswordJavaFXController.class);
+        ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.sortNameButton,"sortname.png",NARPasswordJavaFXController.class);
+	}
+	
+	private void setOrAddItem(PasswordSetting setting){
+		int index=this.indexOfItemByUUID(setting.getUuid());
+		if(index>=0){
+			this.items.set(index,setting);
+		}else{
+			this.items.add(setting);
+		}
+	}
+	
+	private int indexOfItemByUUID(String uuid){
+		int max=this.items.size();
+		for(int index=0;index<max;index++){
+			if(uuid.equals(this.items.get(index).getUuid())){
+				return(index);
+			}
+		}
+		return(-1);		
+	}
+	
+	private int indexOfItemByName(String name){
+		int max=this.items.size();
+		for(int index=0;index<max;index++){
+			if(name.equals(this.items.get(index).getPasswordName())){
+				return(index);
+			}
+		}
+		return(-1);
 	}
 	
 	//event for the open button on the password list
@@ -152,7 +226,7 @@ public class NARPasswordJavaFXController implements Initializable{
     		dialog.initModality(Modality.APPLICATION_MODAL);
     		if(save){
     			dialog.setTitle(this.bundle.getString("save_title"));
-    			controller.setPasswordSettingList(this.passwordList.getItems());
+    			controller.setPasswordSettingList(this.items);
     		}else{
     			dialog.setTitle(this.bundle.getString("load_title"));
     		}
@@ -160,10 +234,26 @@ public class NARPasswordJavaFXController implements Initializable{
     		dialog.showAndWait();
     		//test if a password list was loaded
     		if(!save&&!controller.getCancel()){
-    			passwordList.getItems().clear();
-    			passwordList.getItems().addAll(controller.getPasswordSettingList());
+    			List<PasswordSetting> list=controller.getPasswordSettingList();
+    			this.items.clear();
+    			this.items.setAll(NarpasUtil.prepV2Migrate(list));
+    			//add categories
+    			List<String> categories=NarpasUtil.getAllCategories(list);
+    			this.fieldPasswordCategory.getItems().clear();
+    			this.fieldPasswordCategory.getItems().addAll(categories);
+    			this.fieldCategoryFilter.getItems().clear();
+    			this.fieldCategoryFilter.getItems().addAll(categories);
+    			if(!this.fieldCategoryFilter.getItems().contains(NarpasUtil.DEFAULT_NO_CATEGORY)){
+    				this.fieldCategoryFilter.getItems().add(NarpasUtil.DEFAULT_NO_CATEGORY);
+    			}
+    			if(!this.fieldCategoryFilter.getItems().contains(NarpasUtil.DEFAULT_ALL_CATEGORY)){
+    				this.fieldCategoryFilter.getItems().add(NarpasUtil.DEFAULT_ALL_CATEGORY);
+    			}
+    			this.fieldCategoryFilter.getItems().sort(new StringComparator());
+    			//select the first item
     			passwordList.getSelectionModel().select(0);
     			passwordList.getFocusModel().focus(0);
+    			this.lastSelectionIndex=0;
     			updateFormFields(passwordList.getItems().get(0));
     			this.savePath=controller.getSavePath();
     		}else if(save&&!controller.getCancel()){
@@ -178,13 +268,20 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onAdd(ActionEvent event){
     	long l=0;//if this seems like overkill it is
-    	PasswordSetting newPassword=new PasswordSetting("<new password "+l+">",true,true,true,true,32,"");
-    	while(this.passwordList.getItems().contains(newPassword)){
+    	String passwordName="[new password "+l+"]";
+    	while(this.indexOfItemByName(passwordName)>=0){
     		l++;
-        	newPassword=new PasswordSetting("<new password "+l+">",true,true,true,true,32,"");
+        	passwordName="[new password "+l+"]";
     	}
-    	this.passwordList.getItems().add(newPassword);
-    	this.passwordList.getSelectionModel().select(this.passwordList.getItems().size()-1);
+    	PasswordSetting newPassword=new PasswordSetting(passwordName,true,true,true,true,32,"");
+    	newPassword.setAlgorithmVersion(2);
+    	if(this.isFiltered){
+    		newPassword.setCategory(this.fieldCategoryFilter.getValue());
+    	}else{
+    		newPassword.setCategory(NarpasUtil.DEFAULT_NO_CATEGORY);
+    	}
+    	this.setOrAddItem(newPassword);
+    	this.passwordList.getSelectionModel().select(this.items.size()-1);
     	this.listRemoveButton.setDisable(false);
     	this.onEditPasswordSettings(event);
     }
@@ -193,7 +290,7 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onRemove(ActionEvent event){
     	//sanity checks
-    	if(this.passwordList.getItems().size()<1){
+    	if(this.items.size()<1){
         	this.listRemoveButton.setDisable(true);
     		return;
     	}
@@ -203,15 +300,50 @@ public class NARPasswordJavaFXController implements Initializable{
     		return;
     	}
     	this.isRemoving=true;
-    	this.passwordList.getItems().remove(this.passwordList.getSelectionModel().getSelectedIndex());
+    	int removeIndex=this.passwordList.getSelectionModel().getSelectedIndex();
+    	this.items.remove(removeIndex);
     	this.isRemoving=false;
-    	int newSize=this.passwordList.getItems().size();
-    	if(newSize<=1){
+    	int newSize=this.items.size();
+    	if(newSize<1){//test if there are zero items in the list now
     		this.listRemoveButton.setDisable(true);
     		this.lastSelectionIndex=-1;
+    	}else if(removeIndex==0){//if the 0th item is removed the UI needs to be forcefully updated
+    		this.updateFormFields(this.passwordList.getItems().get(0));
     	}
     }
 
+	//event for the add button on the password list
+    @FXML
+    private void onSortName(ActionEvent event){
+    	this.isSorting=true;
+    	boolean reverse=false;
+    	if(this.sortedBy==SortedBy.NAME){
+    		reverse=!this.sortedReverse;
+    	}
+    	this.items.sort(new PasswordSettingNameComparator(reverse));
+    	this.sortedBy=SortedBy.NAME;
+    	this.sortedReverse=reverse;
+    	this.isSorting=false;
+    	//selected index usually changes after sorting
+    	this.lastSelectionIndex=this.passwordList.getSelectionModel().getSelectedIndex();
+    }
+    
+	//event for the add button on the password list
+    @FXML
+    private void onSortLastUsed(ActionEvent event){
+    	this.isSorting=true;
+    	boolean reverse=false;
+    	if(this.sortedBy==SortedBy.DATE){
+    		reverse=!this.sortedReverse;
+    	}    	
+    	this.items.sort(new PasswordSettingDateComparator(reverse));
+    	this.sortedBy=SortedBy.DATE;
+    	this.sortedReverse=reverse;
+    	this.isSorting=false;
+    	//selected index usually changes after sorting
+    	this.lastSelectionIndex=this.passwordList.getSelectionModel().getSelectedIndex();
+    }
+    
     //event for the edit button in the password settings section
     @FXML
     private void onEditPasswordSettings(ActionEvent event){
@@ -230,8 +362,8 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onAddPasswordSettings(ActionEvent event){
     	this.isAdding=true;
-    	this.passwordList.getItems().add(this.getPasswordSettings());
-    	this.passwordList.getSelectionModel().select(this.passwordList.getItems().size()-1);
+    	this.items.add(this.getPasswordSettings());
+    	this.passwordList.getSelectionModel().select(this.items.size()-1);
     	this.enableDisableFields(false);
     	this.isAdding=false;
     }
@@ -252,6 +384,13 @@ public class NARPasswordJavaFXController implements Initializable{
         clipboard.setContent(content);
         this.passwordInClipboard=true;
 		this.lastClipboardClear=0;//reset the counter
+		//update last used value for the selected password
+		long ms=System.currentTimeMillis();
+    	this.fieldLastUsed.setText(DateUtil.toString(ms,DateUtil.DF_YearMonthDayHourMinuteSecond));
+    	int index=this.indexOfItemByUUID(this.fieldUUID.getText());
+    	if(index>=0){
+    		this.items.get(index).setLastUsed(ms);
+    	}
     }
     
     //event for the clear passphrase button
@@ -274,6 +413,12 @@ public class NARPasswordJavaFXController implements Initializable{
 	        this.passwordInClipboard=false;
         }
     }
+
+    //event that fires when a key is pressed in the password version textfield
+    @FXML
+    private void onPasswordVersionChange(KeyEvent event){
+    	this.generatePassword();
+    }    
     
     //event that fires when a key is pressed in the passphrase textfield
     @FXML
@@ -281,11 +426,35 @@ public class NARPasswordJavaFXController implements Initializable{
     	this.generatePassword();
     }
 
+    //event that fires when a key is pressed in the limit special characters textfield
+    @FXML
+    private void onPasswordLimitSpecialCharactersChange(KeyEvent event){
+    	this.generatePassword();
+    }
+    
     //event that fires when a key is pressed in the password name textfield
     @FXML
     private void onPasswordNameChange(KeyEvent event){
     	this.generatePassword();
     	this.checkAddNew();
+    }
+    
+    //separate event for this checkbox only because it enables/disables another field
+    @FXML
+    private void onCheckSpecialCharacters(ActionEvent event){
+    	int index=this.fieldAlgorithmVersion.getSelectionModel().getSelectedIndex();
+    	if(index>0){
+    		boolean selected=this.checkSpecialCharacters.isSelected();
+    		this.checkLimitSpecialCharacters.setDisable(!selected);
+    		if(!selected){
+        		this.checkLimitSpecialCharacters.setSelected(false);
+    		}
+    	}else{
+    		this.checkLimitSpecialCharacters.setSelected(false);
+    		this.checkLimitSpecialCharacters.setDisable(true);
+    	}
+    	//default event
+    	this.onPasswordSettingsCheckbox(event);
     }
     
     //event that fires when any of the "Use xxxx" checkboxes are checked/unchecked
@@ -295,11 +464,31 @@ public class NARPasswordJavaFXController implements Initializable{
     	this.checkAddNew();
     }
     
-    //event that fires when a key is pressed in the password name textfield
+    //event that fires when a key is pressed in the password notes textfield
     @FXML
     private void onPasswordNotesChange(KeyEvent event){
     	this.checkAddNew();
     }
+    
+    //event that fires when a key is pressed in the password category textfield
+    @FXML
+    private void onPasswordCategoryChange(KeyEvent event){
+    	this.checkAddNew();
+    }    
+    
+    //event that fires when the category filter is changed
+    @FXML
+    private void onCategoryFilterChanged(){
+    	String filterCategory=this.fieldCategoryFilter.getSelectionModel().getSelectedItem();
+    	if(filterCategory.equals(NarpasUtil.DEFAULT_ALL_CATEGORY)){
+    		this.passwordList.setItems(this.items);
+    		this.isFiltered=false;
+    	}else{
+    		FilteredList<PasswordSetting> fl=this.items.filtered(f->filterCategory.equals(f.getCategory()));
+    		this.passwordList.setItems(fl);
+    		this.isFiltered=true;
+    	}
+    }     
     
     //event that fires when a key is pressed in the passphrase clear time textfield
     @FXML
@@ -351,6 +540,38 @@ public class NARPasswordJavaFXController implements Initializable{
     	this.lastClipboardClear=0;
     }
     
+    //called when the algorithm version combobox changes
+    private void onAlgorithmVersionChanged(){
+    	boolean disable=true;
+    	int index=this.fieldAlgorithmVersion.getSelectionModel().getSelectedIndex();
+    	if(index>0){disable=false;}
+        this.checkExtendedCharacters.setDisable(disable);
+        this.checkLimitSpecialCharacters.setDisable(disable);
+        this.checkDuplicateCharacters.setDisable(disable);
+    	this.fieldPasswordVersion.setDisable(disable);
+    	this.fieldLimitSpecialCharacters.setDisable(disable);
+    	if(disable){//v1 algorithm
+            this.checkExtendedCharacters.setSelected(false);
+            this.checkLimitSpecialCharacters.setSelected(false);
+            this.checkDuplicateCharacters.setSelected(false);
+            this.fieldPasswordVersion.setText("");
+            this.fieldLimitSpecialCharacters.setText("");
+        	this.sliderPasswordLength.setBlockIncrement(8d);
+        	this.sliderPasswordLength.setMajorTickUnit(8d);
+        	this.sliderPasswordLength.setSnapToTicks(true);
+            //check if password length has to be downgraded now too
+            int passwordLength=(int)this.sliderPasswordLength.getValue();
+            if((passwordLength%8)!=0){
+        		this.sliderPasswordLength.setValue(Math.round(passwordLength/8.0)*8);
+        	}            
+    	}else{//v2 algorithm
+    		this.sliderPasswordLength.setBlockIncrement(1d);
+    		this.sliderPasswordLength.setMajorTickUnit(8d);
+    		this.sliderPasswordLength.setSnapToTicks(false);
+    	}
+    	this.generatePassword();
+    }
+
     //called by the timer
     private void onTimer(){
 		if(this.passwordInClipboard&&this.checkClearClipboard.isSelected()){
@@ -377,24 +598,26 @@ public class NARPasswordJavaFXController implements Initializable{
 
     //handle selection changes in the password list
     private void passwordListSelectionChanged(ObservableValue<? extends PasswordSetting> observable,PasswordSetting oldValue,PasswordSetting newValue){
+    	/*
+    	 * Despite my best efforts, sometimes the listview will lose the selection.
+    	 * I have gone to some lengths to prevent this.
+    	 * It pretty much always happens if the listview has a single item.
+    	 */
+    	if(newValue==null){
+    		this.passwordList.getSelectionModel().select(0);
+    		return;
+    	}
+    	if(this.isSorting){return;}
     	int currentSelectionIndex=this.passwordList.getSelectionModel().getSelectedIndex();
         if(currentSelectionIndex==this.lastSelectionIndex){
         	return;                	
         }
         //check for unsaved changes
-        if((this.lastSelectionIndex>=0)&&(this.lastSelectionIndex<this.passwordList.getItems().size())){
-            PasswordSetting psSelected=this.passwordList.getItems().get(this.lastSelectionIndex);
+        if((this.lastSelectionIndex>=0)&&(this.lastSelectionIndex<this.items.size())&&((this.isEditing))){
+            PasswordSetting psSelected=this.items.get(this.lastSelectionIndex);
             if((psSelected!=null)&&(!this.isAdding)&&(!this.isRemoving)){
                 PasswordSetting psNew=this.getPasswordSettings();
-                if(
-               		(!psSelected.getPasswordName().equals(psNew.getPasswordName()))||
-               		(!psSelected.getPasswordNotes().equals(psNew.getPasswordNotes()))||
-               		(psSelected.isOptionUseLCase()!=psNew.isOptionUseLCase())||
-               		(psSelected.isOptionUseUCase()!=psNew.isOptionUseUCase())||
-               		(psSelected.isOptionUseSChars()!=psNew.isOptionUseSChars())||
-               		(psSelected.isOptionUseNumbers()!=psNew.isOptionUseNumbers())||
-               		(psSelected.getPasswordLength()!=psNew.getPasswordLength())
-               	){
+                if(!psSelected.compare(psNew)){
                 	//password has changed - prompt to save
                		Alert a=new Alert(
                				AlertType.CONFIRMATION,
@@ -413,7 +636,7 @@ public class NARPasswordJavaFXController implements Initializable{
                          	  * This is literally more efficient and 100x easier to read
                          	  * This is a totally unnecessary use of Optional to try and look cool in front of the functional programming people
                          	  * */
-               				this.passwordList.getItems().set(this.lastSelectionIndex,psNew);
+               				this.items.set(this.lastSelectionIndex,psNew);
                			}
                		}
                	 }
@@ -424,7 +647,7 @@ public class NARPasswordJavaFXController implements Initializable{
         	this.lastSelectionIndex=currentSelectionIndex;
         }else{
         	//this is to deal with the selected index changing when focus is lost
-        	if(this.passwordList.getItems().size()<0){
+        	if(this.items.size()<0){
         		this.lastSelectionIndex=-1;
             	this.listRemoveButton.setDisable(true);
         	}           	
@@ -438,13 +661,49 @@ public class NARPasswordJavaFXController implements Initializable{
     //update all the password setting fields in the right pane
     private void updateFormFields(PasswordSetting setting){
     	if(setting!=null){
-	    	this.fieldPasswordName.setText(setting.getPasswordName());
+	    	//text fields
+    		this.fieldPasswordName.setText(setting.getPasswordName());
 	    	this.fieldPasswordNotes.setText(setting.getPasswordNotes());
-	        this.checkLowerCase.setSelected(setting.isOptionUseLCase());
+	    	this.fieldPasswordVersion.setText(setting.getPasswordVersion());
+	    	this.fieldLastUsed.setText(DateUtil.toString(setting.getLastUsed(),DateUtil.DF_YearMonthDayHourMinuteSecond));
+	    	this.fieldUUID.setText(setting.getUuid());
+	    	//password category
+	    	String category=setting.getCategory();
+	    	if((category==null)||(category.length()<1)){category=NarpasUtil.DEFAULT_NO_CATEGORY;}
+	    	int index=this.fieldPasswordCategory.getItems().indexOf(category);
+	    	if(index<0){//this shouldn't ever happen but probably will
+	    		this.fieldPasswordCategory.getItems().add(category);
+		    	index=this.fieldPasswordCategory.getItems().indexOf(category);
+	    	}
+    		this.fieldPasswordCategory.getSelectionModel().select(index);
+	    	//checkboxes
+	    	this.checkLowerCase.setSelected(setting.isOptionUseLCase());
 	        this.checkUpperCase.setSelected(setting.isOptionUseUCase());
 	        this.checkNumbers.setSelected(setting.isOptionUseNumbers());
-	        this.checkSpecialCharacters.setSelected(setting.isOptionUseSChars());
+	        this.checkExtendedCharacters.setSelected(setting.isOptionUseExtChars());
+	        this.checkDuplicateCharacters.setSelected(setting.isOptionAllowDuplicateCharacters());
+	        //special chararcters
+	        boolean useSChars=setting.isOptionUseSChars();
+	        this.checkSpecialCharacters.setSelected(useSChars);
+	        char[] limitSpecialCharacters=setting.getLimitSpecialChars();
+	        if((limitSpecialCharacters==null)||(limitSpecialCharacters.length<1)){
+	        	this.fieldLimitSpecialCharacters.setText(new String(Narpas.Constants.schars));
+	        	this.checkLimitSpecialCharacters.setSelected(false);
+	        }else{
+	        	this.fieldLimitSpecialCharacters.setText(new String(limitSpecialCharacters));
+	        	this.checkLimitSpecialCharacters.setSelected(true);
+	        }
+	        //algorithm version
+	        int algorithmVersion=setting.getAlgorithmVersion();
+	        if(algorithmVersion<1){
+	        	algorithmVersion=1;
+	        }else if(algorithmVersion>Narpas.Constants.CURRENT_ALGORITHM_VERSION){
+	        	algorithmVersion=Narpas.Constants.CURRENT_ALGORITHM_VERSION;
+	        }
+	        this.fieldAlgorithmVersion.getSelectionModel().select(algorithmVersion-1);
+	        //password slider
 	        this.sliderPasswordLength.setValue(setting.getPasswordLength());
+	        //now generate the password
 	        this.generatePassword();
 	    }
     }
@@ -452,33 +711,67 @@ public class NARPasswordJavaFXController implements Initializable{
     //save PasswordSetting behind the selected item in the password list
     private void updateSelectedListItem(){
     	if(isRemoving){return;}
-    	int size=this.passwordList.getItems().size();
+    	int size=this.items.size();
     	if((this.lastSelectionIndex>-1)&&(size>0)&&(this.lastSelectionIndex<size)){
-			PasswordSetting setting=new PasswordSetting(
-					fieldPasswordName.getText(),
-					checkLowerCase.isSelected(),
-					checkUpperCase.isSelected(),
-					checkNumbers.isSelected(),
-					checkSpecialCharacters.isSelected(),
-					(int)sliderPasswordLength.getValue(),
-					fieldPasswordNotes.getText());
-			this.passwordList.getItems().set(this.lastSelectionIndex,setting);
-		}
+    		PasswordSetting setting=new PasswordSetting();
+    		long ms=System.currentTimeMillis();
+    		setting.setLastUsed(ms);
+	    	this.fieldLastUsed.setText(DateUtil.toString(ms,DateUtil.DF_YearMonthDayHourMinuteSecond));
+	    	//text fields
+    		setting.setPasswordName(this.fieldPasswordName.getText());
+    		setting.setPasswordNotes(this.fieldPasswordNotes.getText());
+    		setting.setPasswordVersion(this.fieldPasswordVersion.getText());
+    		setting.setUuid(this.fieldUUID.getText());
+	    	//password category
+    		String category=this.fieldPasswordCategory.getSelectionModel().getSelectedItem();
+    		setting.setCategory(category);
+    		if(!this.fieldCategoryFilter.getItems().contains(category)){
+    			this.fieldCategoryFilter.getItems().add(category);
+    		}
+    		if(!this.fieldPasswordCategory.getItems().contains(category)){
+    			this.fieldPasswordCategory.getItems().add(category);
+    		}
+	    	//checkboxes
+    		setting.setOptionAllowDuplicateCharacters(this.checkDuplicateCharacters.isSelected());
+    		setting.setOptionUseExtChars(this.checkExtendedCharacters.isSelected());
+    		setting.setOptionUseLCase(this.checkLowerCase.isSelected());
+    		setting.setOptionUseUCase(this.checkUpperCase.isSelected());
+    		setting.setOptionUseNumbers(this.checkNumbers.isSelected());
+	        //special characters
+	        boolean useSChars=this.checkSpecialCharacters.isSelected();
+	        setting.setOptionUseSChars(useSChars);
+	        if(useSChars){
+	        	String limitSpecialChars=this.fieldLimitSpecialCharacters.getText();
+	        	if((this.checkLimitSpecialCharacters.isSelected())&&(limitSpecialChars!=null)&&(limitSpecialChars.length()>0)){
+	        		setting.setLimitSpecialChars(limitSpecialChars.toCharArray());
+	        	}
+	        }
+	        //algorithm version
+	        setting.setAlgorithmVersion(this.fieldAlgorithmVersion.getSelectionModel().getSelectedIndex()+1);
+	        //password length
+	        setting.setPasswordLength((int)this.sliderPasswordLength.getValue());
+	        //now save the updated password
+	        this.setOrAddItem(setting);
+    	}
     }    
     
     //update the password
     private void generatePassword(){
         String passPhrase=this.fieldPassPhrase.getText();
-        String passwordName=this.fieldPasswordName.getText(); 
-        boolean useLCase=this.checkLowerCase.isSelected();
-        boolean useUCase=this.checkUpperCase.isSelected();
-        boolean useNumbers=this.checkNumbers.isSelected();
-        boolean useSpecialCharacters=this.checkSpecialCharacters.isSelected();
-        int basePasswordLength=(int)this.sliderPasswordLength.getValue()/8;
+        PasswordSetting settings=this.getPasswordSettings();
+        //this was always a bad idea for password length, fixed in v2
+        if(settings.getAlgorithmVersion()<=1){
+        	settings.setPasswordLength(settings.getPasswordLength()/8);
+        }
         String password="";
-        if((passPhrase.length()>0)&&(passwordName.length()>0)&&(!passPhrase.equals(passwordName))&&(useLCase||useUCase||useNumbers||useSpecialCharacters)){
-            password=Narpas.generatePassword(passPhrase,passwordName,useLCase,useUCase,useNumbers,useSpecialCharacters,basePasswordLength);
-            this.copyButton.setDisable(false);
+        if(Narpas.validate(passPhrase,settings)){
+        	try{
+                password=Narpas.generatePassword(passPhrase,settings);
+                this.copyButton.setDisable(false);
+        	}catch(Exception x){
+        		this.showErrorAlert(x);
+                this.copyButton.setDisable(true);
+        	}
         }else{
             this.copyButton.setDisable(true);
         }
@@ -491,7 +784,7 @@ public class NARPasswordJavaFXController implements Initializable{
     	if(this.passwordList.getSelectionModel().getSelectedItem().equals(setting)){
     		this.addPasswordButton.setDisable(true);
     		this.savePasswordButton.setDisable(false);
-    	}else if(this.passwordList.getItems().contains(setting)){
+    	}else if(this.items.contains(setting)){
     		this.addPasswordButton.setDisable(true);
     		this.savePasswordButton.setDisable(true);
     	}else{
@@ -502,29 +795,66 @@ public class NARPasswordJavaFXController implements Initializable{
     
     //enable or disable password setting fields
     private void enableDisableFields(boolean enabled){
+        this.fieldPasswordVersion.setDisable(!enabled);
         this.fieldPasswordName.setDisable(!enabled);
-        this.fieldPasswordNotes.setDisable(!enabled);
         this.checkLowerCase.setDisable(!enabled);
         this.checkUpperCase.setDisable(!enabled);
         this.checkNumbers.setDisable(!enabled);
         this.checkSpecialCharacters.setDisable(!enabled);
+        this.checkLimitSpecialCharacters.setDisable(!enabled);
+        this.fieldLimitSpecialCharacters.setDisable(!enabled);
+        this.checkDuplicateCharacters.setDisable(!enabled);
         this.sliderPasswordLength.setDisable(!enabled);
+        this.fieldPasswordNotes.setDisable(!enabled);
         this.editPasswordButton.setDisable(enabled);
         this.savePasswordButton.setDisable(!enabled);
         this.addPasswordButton.setDisable(!enabled);
         this.undoPasswordButton.setDisable(!enabled);
+        this.fieldAlgorithmVersion.setDisable(!enabled);
+        this.fieldPasswordCategory.setDisable(!enabled);
+        if(enabled){//for new v2 fields
+        	this.onAlgorithmVersionChanged();
+        }else{
+            this.checkExtendedCharacters.setDisable(true);
+        	this.fieldPasswordVersion.setDisable(true);
+        }
+        this.isEditing=enabled;
     }
     
     //get the current password settings
     private PasswordSetting getPasswordSettings(){
-    	return(new PasswordSetting(
-    			this.fieldPasswordName.getText(),
-    			this.checkLowerCase.isSelected(),
-    			this.checkUpperCase.isSelected(),
-    			this.checkNumbers.isSelected(),
-    			this.checkSpecialCharacters.isSelected(),
-    			(int)this.sliderPasswordLength.getValue(),
-    			this.fieldPasswordNotes.getText()));
+    	PasswordSetting settings=new PasswordSetting();
+    	int algorithmVersion=this.fieldAlgorithmVersion.getSelectionModel().getSelectedIndex()+1;
+    	settings.setAlgorithmVersion(algorithmVersion);
+    	settings.setCategory(this.fieldPasswordCategory.getSelectionModel().getSelectedItem());
+    	settings.setLastUsed(this.passwordList.getSelectionModel().getSelectedItem().getLastUsed());
+    	settings.setOptionUseLCase(this.checkLowerCase.isSelected());
+    	settings.setOptionUseNumbers(this.checkNumbers.isSelected());
+    	boolean useSChars=this.checkSpecialCharacters.isSelected();
+    	settings.setOptionUseSChars(useSChars);
+    	settings.setOptionUseUCase(this.checkUpperCase.isSelected());
+    	settings.setPasswordLength((int)this.sliderPasswordLength.getValue());
+    	settings.setPasswordName(this.fieldPasswordName.getText());
+    	settings.setPasswordNotes(this.fieldPasswordNotes.getText());
+    	//fields added to v2
+    	if(algorithmVersion>1){
+        	settings.setPasswordVersion(this.fieldPasswordVersion.getText());
+        	settings.setOptionAllowDuplicateCharacters(this.checkDuplicateCharacters.isSelected());
+        	settings.setOptionUseExtChars(this.checkExtendedCharacters.isSelected());
+    		if(useSChars){
+    			if(this.checkLimitSpecialCharacters.isSelected()){
+    				String limitSpecialChars=this.fieldLimitSpecialCharacters.getText();
+    				if((limitSpecialChars==null)||(limitSpecialChars.length()<1)){
+    					settings.setLimitSpecialChars(null);
+    				}else{
+    					settings.setLimitSpecialChars(limitSpecialChars.toCharArray());
+    				}
+    			}else{
+    				settings.setLimitSpecialChars(null);
+    			}
+    		}
+    	}
+    	return(settings);
     }
     
     //show an error alert

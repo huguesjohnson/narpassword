@@ -142,16 +142,14 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
 				writer.close();
 				this.cancel=false;
 				this.closeWindow(event);
-			}
-			catch(Exception x){
+			}catch(Exception x){
 				labelSaveLoadError.setText(x.getMessage());
 			}
 		}else{//load
 			String encryptedString=null;
 			try{
 				encryptedString=Files.readString(Paths.get(fieldSavePath.getText()));
-    		}
-			catch(Exception x){
+    		}catch(Exception x){
 				labelSaveLoadError.setText(x.getMessage());
 			}
 			if(encryptedString!=null){
@@ -159,11 +157,10 @@ public class NARPasswordJavaFXSaveLoadController implements Initializable{
     				String json=StringEncryptDecrypt.decryptString(fieldSavePassword.getText(),encryptedString);
     				Type listType=new TypeToken<ArrayList<PasswordSetting>>(){}.getType();
     				this.passwordSettingList=new Gson().fromJson(json,listType);
-    				this.passwordSettingList.sort(new PasswordSettingNameComparator());
+    				this.passwordSettingList.sort(new PasswordSettingNameComparator(false));
     				this.cancel=false;
     				this.closeWindow(event);
-        		}
-    			catch(Exception x){
+        		}catch(Exception x){
     				labelSaveLoadError.setText("Decrypt error "+x.getMessage());
     			}
 			}
