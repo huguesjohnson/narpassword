@@ -3,6 +3,7 @@
 package com.huguesjohnson.narpassword.javafx;
 
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -18,6 +19,7 @@ import com.huguesjohnson.narpas.PasswordSettingNameComparator;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -61,6 +63,7 @@ public class NARPasswordJavaFXController implements Initializable{
     private long lastPassPhraseClear=0;
 	private String savePath;
 	public void setSavePath(String savePath){this.savePath=savePath;}
+	DateFormat lastUsedFormat=DateUtil.DF_YearMonthDayHourMinuteSecond;
 	//sorting
     public enum SortedBy{NAME,DATE};
 	private SortedBy sortedBy=SortedBy.NAME;
@@ -101,7 +104,6 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML private Slider sliderPasswordLength;
     @FXML private Button editPasswordButton;
     @FXML private Button savePasswordButton;
-    @FXML private Button addPasswordButton;
     @FXML private Button undoPasswordButton;
     @FXML private TextField fieldClearClipboardSeconds;
     @FXML private CheckBox checkClearPassphrase;
@@ -164,7 +166,6 @@ public class NARPasswordJavaFXController implements Initializable{
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.copyButton,"copy.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.editPasswordButton,"edit.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.savePasswordButton,"save.png",NARPasswordJavaFXController.class);
-        ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.addPasswordButton,"add.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.undoPasswordButton,"undo.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.sortLastUsedButton,"sortlastused.png",NARPasswordJavaFXController.class);
         ImageUtil.drawButtonImageIfNotLoadedFromFXML(this.sortNameButton,"sortname.png",NARPasswordJavaFXController.class);
@@ -173,11 +174,30 @@ public class NARPasswordJavaFXController implements Initializable{
 	private void setOrAddItem(PasswordSetting setting){
 		int index=this.indexOfItemByUUID(setting.getUuid());
 		if(index>=0){
-			this.items.set(index,setting);
+			Platform.runLater(()->this.items.set(index,setting));
 		}else{
-			this.items.add(setting);
+			Platform.runLater(()->this.items.add(setting));
 		}
 	}
+	
+	private void removeItem(PasswordSetting setting){
+		int index=this.indexOfItemByUUID(setting.getUuid());
+		if(index>=0){
+			/*
+			 * This logs an exception if:
+			 * 1) The listview is showing a FilteredList
+			 * 2) The first item is removed
+			 * 3) The first item is also the first item in unfiltered list
+			 * Based on the stack trace...
+			 * 1) javafx.collections.WeakListChangeListener.onChanged is invoked
+			 * 2) This causes the list to reorder, a fine thing to do
+			 * 3) During the reorder, java.lang.IndexOutOfBoundsException is thrown
+			 * This doesn't happen in another conditions I've found so far.
+			 * I don't think there's anything I can do about this.
+			 */
+	        Platform.runLater(()->this.items.remove(index));
+		}
+	}	
 	
 	private int indexOfItemByUUID(String uuid){
 		int max=this.items.size();
@@ -235,8 +255,8 @@ public class NARPasswordJavaFXController implements Initializable{
     		//test if a password list was loaded
     		if(!save&&!controller.getCancel()){
     			List<PasswordSetting> list=controller.getPasswordSettingList();
-    			this.items.clear();
-    			this.items.setAll(NarpasUtil.prepV2Migrate(list));
+    			Platform.runLater(()->this.items.clear());
+    			Platform.runLater(()->this.items.setAll(NarpasUtil.prepV2Migrate(list)));
     			//add categories
     			List<String> categories=NarpasUtil.getAllCategories(list);
     			this.fieldPasswordCategory.getItems().clear();
@@ -294,22 +314,22 @@ public class NARPasswordJavaFXController implements Initializable{
         	this.listRemoveButton.setDisable(true);
     		return;
     	}
-    	int currentSelection=this.passwordList.getSelectionModel().getSelectedIndex();
-    	if(currentSelection<0){
+    	PasswordSetting setting=this.passwordList.getSelectionModel().getSelectedItem();
+    	if(setting==null){
         	this.listRemoveButton.setDisable(true);
     		return;
     	}
     	this.isRemoving=true;
-    	int removeIndex=this.passwordList.getSelectionModel().getSelectedIndex();
-    	this.items.remove(removeIndex);
+    	this.removeItem(setting);
     	this.isRemoving=false;
     	int newSize=this.items.size();
     	if(newSize<1){//test if there are zero items in the list now
     		this.listRemoveButton.setDisable(true);
     		this.lastSelectionIndex=-1;
-    	}else if(removeIndex==0){//if the 0th item is removed the UI needs to be forcefully updated
-    		this.updateFormFields(this.passwordList.getItems().get(0));
     	}
+//    	else if(removeIndex==0){//if the 0th item is removed the UI needs to be forcefully updated
+//    		this.updateFormFields(this.passwordList.getItems().get(0));
+//    	}
     }
 
 	//event for the add button on the password list
@@ -348,7 +368,6 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onEditPasswordSettings(ActionEvent event){
     	this.enableDisableFields(true);
-    	this.checkAddNew();
     }
 
     //event for the save button in the password settings section
@@ -356,16 +375,6 @@ public class NARPasswordJavaFXController implements Initializable{
     private void onSavePasswordSettings(ActionEvent event){
     	this.updateSelectedListItem();
     	this.enableDisableFields(false);
-    }
-    
-    //event for the add button in the password settings section
-    @FXML
-    private void onAddPasswordSettings(ActionEvent event){
-    	this.isAdding=true;
-    	this.items.add(this.getPasswordSettings());
-    	this.passwordList.getSelectionModel().select(this.items.size()-1);
-    	this.enableDisableFields(false);
-    	this.isAdding=false;
     }
     
     //event for the undo button in the password settings section
@@ -386,7 +395,7 @@ public class NARPasswordJavaFXController implements Initializable{
 		this.lastClipboardClear=0;//reset the counter
 		//update last used value for the selected password
 		long ms=System.currentTimeMillis();
-    	this.fieldLastUsed.setText(DateUtil.toString(ms,DateUtil.DF_YearMonthDayHourMinuteSecond));
+    	this.fieldLastUsed.setText(DateUtil.toString(ms,this.lastUsedFormat));
     	int index=this.indexOfItemByUUID(this.fieldUUID.getText());
     	if(index>=0){
     		this.items.get(index).setLastUsed(ms);
@@ -422,7 +431,7 @@ public class NARPasswordJavaFXController implements Initializable{
     
     //event that fires when a key is pressed in the passphrase textfield
     @FXML
-    private void onPassphraseChange(KeyEvent event){
+    private void onPassphraseChange(KeyEvent event){ 
     	this.generatePassword();
     }
 
@@ -434,9 +443,8 @@ public class NARPasswordJavaFXController implements Initializable{
     
     //event that fires when a key is pressed in the password name textfield
     @FXML
-    private void onPasswordNameChange(KeyEvent event){
+    private void onPasswordNameChange(KeyEvent event){ 
     	this.generatePassword();
-    	this.checkAddNew();
     }
     
     //separate event for this checkbox only because it enables/disables another field
@@ -461,31 +469,26 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onPasswordSettingsCheckbox(ActionEvent event){
     	this.generatePassword();
-    	this.checkAddNew();
     }
     
     //event that fires when a key is pressed in the password notes textfield
     @FXML
-    private void onPasswordNotesChange(KeyEvent event){
-    	this.checkAddNew();
-    }
+    private void onPasswordNotesChange(KeyEvent event){ }
     
     //event that fires when a key is pressed in the password category textfield
     @FXML
-    private void onPasswordCategoryChange(KeyEvent event){
-    	this.checkAddNew();
-    }    
+    private void onPasswordCategoryChange(KeyEvent event){ }    
     
     //event that fires when the category filter is changed
     @FXML
     private void onCategoryFilterChanged(){
     	String filterCategory=this.fieldCategoryFilter.getSelectionModel().getSelectedItem();
     	if(filterCategory.equals(NarpasUtil.DEFAULT_ALL_CATEGORY)){
-    		this.passwordList.setItems(this.items);
+    		Platform.runLater(()->this.passwordList.setItems(this.items));
     		this.isFiltered=false;
     	}else{
     		FilteredList<PasswordSetting> fl=this.items.filtered(f->filterCategory.equals(f.getCategory()));
-    		this.passwordList.setItems(fl);
+    		Platform.runLater(()->this.passwordList.setItems(fl));
     		this.isFiltered=true;
     	}
     }     
@@ -636,7 +639,7 @@ public class NARPasswordJavaFXController implements Initializable{
                          	  * This is literally more efficient and 100x easier to read
                          	  * This is a totally unnecessary use of Optional to try and look cool in front of the functional programming people
                          	  * */
-               				this.items.set(this.lastSelectionIndex,psNew);
+               				Platform.runLater(()->this.items.set(this.lastSelectionIndex,psNew));
                			}
                		}
                	 }
@@ -778,21 +781,6 @@ public class NARPasswordJavaFXController implements Initializable{
         this.fieldPassword.setText(password);
     }
     
-    //check if the add new password button should be enabled
-    private void checkAddNew(){
-    	PasswordSetting setting=this.getPasswordSettings();
-    	if(this.passwordList.getSelectionModel().getSelectedItem().equals(setting)){
-    		this.addPasswordButton.setDisable(true);
-    		this.savePasswordButton.setDisable(false);
-    	}else if(this.items.contains(setting)){
-    		this.addPasswordButton.setDisable(true);
-    		this.savePasswordButton.setDisable(true);
-    	}else{
-    		this.addPasswordButton.setDisable(false);
-    		this.savePasswordButton.setDisable(false);
-    	}
-    }
-    
     //enable or disable password setting fields
     private void enableDisableFields(boolean enabled){
         this.fieldPasswordVersion.setDisable(!enabled);
@@ -808,7 +796,6 @@ public class NARPasswordJavaFXController implements Initializable{
         this.fieldPasswordNotes.setDisable(!enabled);
         this.editPasswordButton.setDisable(enabled);
         this.savePasswordButton.setDisable(!enabled);
-        this.addPasswordButton.setDisable(!enabled);
         this.undoPasswordButton.setDisable(!enabled);
         this.fieldAlgorithmVersion.setDisable(!enabled);
         this.fieldPasswordCategory.setDisable(!enabled);
@@ -827,7 +814,8 @@ public class NARPasswordJavaFXController implements Initializable{
     	int algorithmVersion=this.fieldAlgorithmVersion.getSelectionModel().getSelectedIndex()+1;
     	settings.setAlgorithmVersion(algorithmVersion);
     	settings.setCategory(this.fieldPasswordCategory.getSelectionModel().getSelectedItem());
-    	settings.setLastUsed(this.passwordList.getSelectionModel().getSelectedItem().getLastUsed());
+    	settings.setLastUsed(DateUtil.toEpochTime(this.fieldLastUsed.getText(),this.lastUsedFormat));
+    	//settings.setLastUsed(System.currentTimeMillis());
     	settings.setOptionUseLCase(this.checkLowerCase.isSelected());
     	settings.setOptionUseNumbers(this.checkNumbers.isSelected());
     	boolean useSChars=this.checkSpecialCharacters.isSelected();
