@@ -254,8 +254,8 @@ public class NARPasswordJavaFXController implements Initializable{
     		dialog.showAndWait();
     		//test if a password list was loaded
     		if(!save&&!controller.getCancel()){
-    			List<PasswordSetting> list=controller.getPasswordSettingList();
     			Platform.runLater(()->this.items.clear());
+    			List<PasswordSetting> list=controller.getPasswordSettingList();
     			Platform.runLater(()->this.items.setAll(NarpasUtil.prepV2Migrate(list)));
     			//add categories
     			List<String> categories=NarpasUtil.getAllCategories(list);
@@ -483,7 +483,7 @@ public class NARPasswordJavaFXController implements Initializable{
     @FXML
     private void onCategoryFilterChanged(){
     	String filterCategory=this.fieldCategoryFilter.getSelectionModel().getSelectedItem();
-    	if(filterCategory.equals(NarpasUtil.DEFAULT_ALL_CATEGORY)){
+    	if((filterCategory==null)||(filterCategory.equals(NarpasUtil.DEFAULT_ALL_CATEGORY))){
     		Platform.runLater(()->this.passwordList.setItems(this.items));
     		this.isFiltered=false;
     	}else{
