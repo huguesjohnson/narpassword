@@ -1,6 +1,7 @@
 *.class
 *.project
 *.testlist
+**/.DS_Store
 Java-Lib/bin
 Java-Lib/.settings
 Java-Lib/bin
