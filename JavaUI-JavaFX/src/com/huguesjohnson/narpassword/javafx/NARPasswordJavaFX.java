@@ -2,6 +2,9 @@
 
 package com.huguesjohnson.narpassword.javafx;
 
+import java.awt.Taskbar;
+import java.awt.Taskbar.Feature;
+import java.awt.Toolkit;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -55,8 +58,21 @@ public class NARPasswordJavaFX extends Application{
         FXMLLoader loader=new FXMLLoader(getClass().getResource("NARPasswordFX.fxml"),resources);
         Scene scene=new Scene(loader.load());        
         NARPasswordJavaFXController controller=(NARPasswordJavaFXController)loader.getController();
+        //try to set the icon - works on Ubuntu for whatever that is worth
         try{
             stage.getIcons().add(new Image(NARPasswordJavaFX.class.getResourceAsStream("narpas-icon-16.png"))); 
+        }catch(Exception x){/* not implemented - just here to prevent application from crashing if for some reason the icon can't be loaded */}
+        //try to set the taskbar icon - works on MacOS for whatever that is worth
+        try{
+        	if(Taskbar.isTaskbarSupported()){
+        		Taskbar taskbar=Taskbar.getTaskbar();
+        		if(taskbar.isSupported(Feature.ICON_IMAGE)){
+                    Toolkit defaultToolkit=Toolkit.getDefaultToolkit();
+                    //why does this not use the JavaFX Image class?
+                    java.awt.Image icon=defaultToolkit.getImage(getClass().getResource("narpas-icon-48.png"));
+                    taskbar.setIconImage(icon);
+    			}
+        	}        	
         }catch(Exception x){/* not implemented - just here to prevent application from crashing if for some reason the icon can't be loaded */}
         stage.setScene(scene);
         stage.setTitle(resources.getString("app_title"));

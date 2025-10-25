@@ -9,6 +9,7 @@ JavaUI-Swing/bin
 JavaUI-JavaFX/build
 JavaUI-JavaFX/dist
 JavaUI-JavaFX/nbproject
+JavaUI-JavaFX/.settings
 JavaUI-Android/*gradle*
 JavaUI-Android/local.properties
 JavaUI-Android/narpasProject.iml

@@ -7,7 +7,7 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/DubbelLibJava"/>
 	<classpathentry kind="lib" path="lib/gson-2.10.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DubbelLib"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
