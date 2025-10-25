@@ -10,7 +10,7 @@
 	<classpathentry kind="lib" path="/NARPassword-JavaLib/lib/gson-2.10.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NARPassword-JavaLib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/DubbelLib"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javafx-sdk-21.0.6">
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javafx-sdk-25.0.1">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
